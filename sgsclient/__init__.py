@@ -16,4 +16,4 @@ import pbr.version
 
 
 __version__ = pbr.version.VersionInfo(
-    'python-sgsclient').version_string()
+    'sgservice-client').version_string()
