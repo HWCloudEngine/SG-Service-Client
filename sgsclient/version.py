@@ -13,4 +13,4 @@
 
 from pbr import version
 
-version_info = version.VersionInfo('python-sgsclient')
+version_info = version.VersionInfo('sgservice-client')

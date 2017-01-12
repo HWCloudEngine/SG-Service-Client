@@ -29,7 +29,7 @@ from six.moves import urllib
 from sgsclient.openstack.common.apiclient import exceptions as exc
 
 LOG = logging.getLogger(__name__)
-USER_AGENT = 'python-sgsclient'
+USER_AGENT = 'sgservice-client'
 CHUNKSIZE = 1024 * 64  # 64kB
 
 
@@ -386,7 +386,7 @@ def _construct_http_client(*args, **kwargs):
             'service_type': service_type,
             'region_name': region_name,
             'service_name': service_name,
-            'user_agent': 'python-sgsclient',
+            'user_agent': 'sgservice-client',
         }
         parameters.update(kwargs)
         return SessionClient(**parameters)

@@ -345,10 +345,60 @@ class SGServiceShell(object):
                                        " either --os-auth-url or via"
                                        " env[OS_AUTH_URL]")
 
-        # TODO(luobin): use keystone get endpoint and kwargs
-        kwargs = {}
-        project_id = "468b0b3a8318403eba8e7d4fcf44e611"
-        endpoint = "http://162.3.117.200:8975/v1/%s" % project_id
+        endpoint = args.sgs_url
+
+        if args.os_no_client_auth:
+            # Authenticate through sgservice, don't use session
+            kwargs = {
+                'username': args.os_username,
+                'password': args.os_password,
+                'auth_token': args.os_auth_token,
+                'auth_url': args.os_auth_url,
+                'token': args.os_auth_token,
+                'insecure': args.insecure,
+                'timeout': args.api_timeout
+            }
+
+            if args.os_region_name:
+                kwargs['region_name'] = args.os_region_name
+        else:
+            # Create a keystone session and keystone auth
+            keystone_session = ksession.Session.load_from_cli_options(args)
+            project_id = args.os_project_id or args.os_tenant_id
+            project_name = args.os_project_name or args.os_tenant_name
+
+            keystone_auth = self._get_keystone_auth(
+                keystone_session,
+                args.os_auth_url,
+                username=args.os_username,
+                user_id=args.os_user_id,
+                user_domain_id=args.os_user_domain_id,
+                user_domain_name=args.os_user_domain_name,
+                password=args.os_password,
+                auth_token=args.os_auth_token,
+                project_id=project_id,
+                project_name=project_name,
+                project_domain_id=args.os_project_domain_id,
+                project_domain_name=args.os_project_domain_name)
+
+            endpoint_type = args.os_endpoint_type or 'publicURL'
+            service_type = args.os_service_type or 'sg-service'
+
+            endpoint = keystone_auth.get_endpoint(
+                keystone_session,
+                service_type=service_type,
+                region_name=args.os_region_name)
+
+            kwargs = {
+                'session': keystone_session,
+                'auth': keystone_auth,
+                'service_type': service_type,
+                'endpoint_type': endpoint_type,
+                'region_name': args.os_region_name,
+            }
+
+        if args.api_timeout:
+            kwargs['timeout'] = args.api_timeout
 
         client = sgs_client.Client(api_version, endpoint, **kwargs)
 
