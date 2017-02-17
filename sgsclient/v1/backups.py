@@ -21,10 +21,13 @@ class Backup(base.Resource):
 class BackupManager(base.ManagerWithFind):
     resource_class = Backup
 
-    def create(self, volume_id, name=None, description=None):
+    def create(self, volume_id, name=None, description=None, type='full',
+               destination='local'):
         body = {'backup': {"volume_id": volume_id,
                            "name": name,
-                           "description": description}}
+                           "description": description,
+                           "type": type,
+                           'destination': destination}}
         url = "/backups"
         return self._create(url, body, 'backup')
 
@@ -75,4 +78,4 @@ class BackupManager(base.ManagerWithFind):
         url = "/backups/{backup_id}/restore".format(
             backup_id=backup_id)
         body = {"restore": {"volume_id": volume_id}}
-        return self._create(url, body, 'backup')
+        return self._create(url, body, 'restore')

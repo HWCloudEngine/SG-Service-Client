@@ -21,6 +21,18 @@ class Volume(base.Resource):
 class VolumeManager(base.ManagerWithFind):
     resource_class = Volume
 
+    def create(self, snapshot_id=None, checkpoint_id=None, volume_type=None,
+               availability_zone=None, name=None, description=None):
+        body = {'volume': {'name': name,
+                           'snapshot_id': snapshot_id,
+                           'checkpoint_id': checkpoint_id,
+                           'description': description,
+                           'volume_type': volume_type,
+                           'availability_zone': availability_zone,
+                           }}
+        url = "/volumes"
+        return self._create(url, body, 'volume')
+
     def list(self, detailed=False, search_opts=None, marker=None, limit=None,
              sort_key=None, sort_dir=None, sort=None):
         """Lists all volumes.
@@ -64,8 +76,12 @@ class VolumeManager(base.ManagerWithFind):
             volume_id=volume_id)
         return self._get(url, response_key="volume", headers=headers)
 
-    def enable(self, volume_id):
-        return self._action("enable", volume_id)
+    def enable(self, volume_id, name=None, description=None):
+        info = {
+            'name': name,
+            'description': description
+        }
+        return self._action("enable", volume_id, info)
 
     def disable(self, volume_id):
         return self._action("disable", volume_id)

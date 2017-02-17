@@ -14,10 +14,12 @@
 
 from sgsclient.common import http
 from sgsclient.v1 import backups
+from sgsclient.v1 import checkpoints
 from sgsclient.v1 import replicates
 from sgsclient.v1 import replications
 from sgsclient.v1 import snapshots
 from sgsclient.v1 import volumes
+
 
 class Client(object):
     """Client for the sgs v1 API.
@@ -36,3 +38,4 @@ class Client(object):
         self.replicates = replicates.ReplicateManager(self.http_client)
         self.backups = backups.BackupManager(self.http_client)
         self.snapshots = snapshots.SnapshotManager(self.http_client)
+        self.checkpoints = checkpoints.CheckpointManager(self.http_client)
