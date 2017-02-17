@@ -15,22 +15,23 @@ from sgsclient.common import utils
 
 #################
 
-@utils.arg('--name',
-           metavar='<name>',
-           help='Replication name.')
 @utils.arg('master_volume',
            metavar='<master-volume>',
            help='ID of master-volume.')
 @utils.arg('slave_volume',
            metavar='<slave-volume>',
            help='ID of slave-volume.')
+@utils.arg('--name',
+           metavar='<name>',
+           help='Replication name.')
 @utils.arg('--description',
            metavar='<description>',
            help='The description of a replication.')
 def do_replication_create(cs, args):
     """Create a replication."""
     replication = cs.replications.create(
-        args.name, args.master_volume, args.slave_volume, args.description)
+        args.master_volume, args.slave_volume, name=args.name,
+        description=args.description)
     utils.print_dict(replication.to_dict())
 
 
@@ -104,9 +105,47 @@ def do_get(cs, args):
     utils.print_dict(volume.to_dict())
 
 
+@utils.arg('--checkpoint_id',
+           metavar='<checkpoint-id>',
+           help='ID of checkpoint.')
+@utils.arg('--snapshot_id',
+           metavar='<snapshot-id>',
+           help='ID of snapshot.')
+@utils.arg('--name',
+           metavar='<name>',
+           help='Volume name.')
+@utils.arg('--description',
+           metavar='<description>',
+           help='The description of volume.')
+@utils.arg('--volume_type',
+           metavar='<volume-type>',
+           help='Volume type.')
+@utils.arg('--availability_zone',
+           metavar='<availability-zone>',
+           help='availability zone')
+def do_create(cs, args):
+    """Create a volume."""
+    try:
+        cs.volumes.create(checkpoint_id=args.checkpoint_id,
+                          snapshot_id=args.snapshot_id,
+                          name=args.name,
+                          description=args.description,
+                          volume_type=args.volume_type,
+                          availability_zone=args.availability_zone)
+        print("Request to create volume has been accepted.")
+    except Exception as e:
+        print("Create volume request failed: %s" % e)
+
+
 @utils.arg('volume_id',
            metavar='<volume-id>',
            help='ID of volume.')
+@utils.arg('--name',
+           metavar='<name>',
+           help='Replication name.')
+@utils.arg('--description',
+           metavar='<description>',
+           help='The description of a replication.')
 def do_enable_sg(cs, args):
     """Enable volume's SG."""
     volume = cs.volumes.enable(args.volume_id)
@@ -126,12 +165,27 @@ def do_disable_sg(cs, args):
 @utils.arg('volume_id',
            metavar='<volume-id>',
            help='ID of volume.')
-@utils.arg('instance_uuid',
+@utils.arg('--instance_uuid',
            metavar='<instance-id>',
            help='ID of instance.')
+@utils.arg('--host_name',
+           metavar='<host-name>',
+           help='The name of host.')
+@utils.arg('--mountpoint',
+           metavar='<mountpoint>',
+           help='The mountpoint.')
+@utils.arg('--mode',
+           metavar='<mode>',
+           help='The attach mode.')
 def do_attach(cs, args):
     """Add sg-volume attachment metadata."""
-    cs.volumes.attach(args.volume_id, args.instance_uuid, "/dev/sdb")
+    mode = args.mode
+    mode = 'rw' if mode is None else mode
+    if mode not in ['rw', 'ro']:
+        print("Attach mode must be rw or ro")
+        return
+    cs.volumes.attach(args.volume_id, args.instance_uuid, args.mountpoint,
+                      args.mode, args.host_name)
 
 
 @utils.arg('volume_id',
@@ -192,13 +246,23 @@ def do_roll_detaching(cs, args):
 @utils.arg('peer_volume',
            metavar='<peer-volume>',
            help='ID of peer-volume.')
+@utils.arg('replication_id',
+           metavar='<replication-id>',
+           help='ID of replication.')
 @utils.arg('--mode',
            metavar='<mode>',
            default='master',
            help='ID of volume.')
 def do_replicate_create(cs, args):
     """Create volume's replicate."""
-    volume = cs.replicates.create(args.volume_id, args.mode, args.peer_volume)
+    mode = args.mode
+    mode = 'master' if mode is None else mode
+    if mode not in ['master', 'slave']:
+        print("Replicate mode must be master or slave")
+        return
+    volume = cs.replicates.create(vollume_id=args.volume_id, mode=mode,
+                                  replication_id=args.replication_id,
+                                  peer_volume=args.peer_volume)
     utils.print_dict(volume.to_dict())
 
 
@@ -292,6 +356,15 @@ def do_snapshot_show(cs, args):
     utils.print_dict(snapshot.to_dict())
 
 
+@utils.arg('snapshot_id',
+           metavar='<snapshot-id>',
+           help='ID of snapshot.')
+def do_snapshot_rollback(cs, args):
+    """Rollback snapshot."""
+    rollback = cs.snapshots.rollback(args.snapshot_id)
+    utils.print_dict(rollback.to_dict())
+
+
 ####################
 
 @utils.arg('volume_id',
@@ -303,9 +376,27 @@ def do_snapshot_show(cs, args):
 @utils.arg('--description',
            metavar='<description>',
            help='Description of backup.')
+@utils.arg('--type',
+           metavar='<type>',
+           help='Full or incremental backup.')
+@utils.arg('--destination',
+           metavar='<destination>',
+           help='Local or remote backup.')
 def do_backup_create(cs, args):
     """Create backup."""
-    backup = cs.backups.create(args.volume_id, args.name, args.description)
+    type = args.type
+    type = 'full' if type is None else type
+    if type not in ['full', 'incremental']:
+        print("Backup type must be full or incremental")
+        return
+    destination = args.destination
+    destination = 'local' if destination is None else destination
+    if destination not in ['local', 'remote']:
+        print("Backup destination must be local or remote")
+        return
+    backup = cs.backups.create(volume_id=args.volume_id, name=args.name,
+                               description=args.description,
+                               type=type, destination=destination)
     utils.print_dict(backup.to_dict())
 
 
@@ -342,3 +433,54 @@ def do_backup_restore(cs, args):
     """Restore backup."""
     backup = cs.backups.restore(args.backup_id, args.volume_id)
     utils.print_dict(backup.to_dict())
+
+
+#############################
+
+
+@utils.arg('replication_id',
+           metavar='<replication-id>',
+           help='ID of checkpoint.')
+@utils.arg('--name',
+           metavar='<name>',
+           help='Name of checkpoint.')
+@utils.arg('--description',
+           metavar='<description>',
+           help='Description of checkpoint.')
+def do_checkpoint_create(cs, args):
+    """Create checkpoint."""
+    checkpoint = cs.checkpoints.create(args.volume_id, args.name,
+                                       args.description)
+    utils.print_dict(checkpoint.to_dict())
+
+
+@utils.arg('checkpoint_id',
+           metavar='<checkpoint-id>',
+           help='ID of checkpoint.')
+def do_checkpoint_delete(cs, args):
+    """Delete checkpoint."""
+    checkpoint = args.checkpoint_id
+    try:
+        cs.checkpoints.delete(checkpoint)
+        print("Request to delete checkpoint %s has been accepted." % (
+            checkpoint))
+    except Exception as e:
+        print("Delete for checkpoint %s failed: %s" % (checkpoint, e))
+
+
+@utils.arg('checkpoint_id',
+           metavar='<checkpoint-id>',
+           help='ID of checkpoint.')
+def do_checkpoint_show(cs, args):
+    """Get checkpoint."""
+    checkpoint = cs.checkpoints.get(args.checkpoint_id)
+    utils.print_dict(checkpoint.to_dict())
+
+
+@utils.arg('checkpoint_id',
+           metavar='<checkpoint-id>',
+           help='ID of checkpoint.')
+def do_checkpoint_rollback(cs, args):
+    """Rollback checkpoint."""
+    rollback = cs.checkpoints.rollback(args.checkpoint_id)
+    utils.print_dict(rollback.to_dict())

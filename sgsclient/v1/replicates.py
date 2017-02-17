@@ -17,8 +17,9 @@ from sgsclient.v1.volumes import Volume
 class ReplicateManager(base.Manager):
     resource_class = Volume
 
-    def create(self, volume_id, mode, peer_volume):
+    def create(self, volume_id, mode, replication_id, peer_volume):
         info = {'mode': mode,
+                'replication_id': replication_id,
                 'peer_volume': peer_volume}
         return self._action("create_replicate", volume_id, info)
 
