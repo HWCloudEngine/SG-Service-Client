@@ -21,7 +21,7 @@ class Replication(base.Resource):
 class ReplicationManager(base.ManagerWithFind):
     resource_class = Replication
 
-    def create(self, name, master_volume, slave_volume, description=None):
+    def create(self, master_volume, slave_volume, name=None, description=None):
         body = {'replication': {'name': name,
                                 'master_volume': master_volume,
                                 'slave_volume': slave_volume,

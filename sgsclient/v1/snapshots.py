@@ -21,10 +21,11 @@ class Snapshot(base.Resource):
 class SnapshotManager(base.ManagerWithFind):
     resource_class = Snapshot
 
-    def create(self, volume_id, name=None, description=None):
+    def create(self, volume_id, name=None, description=None, checkpoint_id=None):
         body = {'snapshot': {"volume_id": volume_id,
                              "name": name,
-                             "description": description}}
+                             "description": description,
+                             "checkpoint_id": checkpoint_id}}
         url = "/snapshots"
         return self._create(url, body, 'snapshot')
 
