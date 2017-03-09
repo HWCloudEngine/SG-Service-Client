@@ -20,10 +20,9 @@ import copy
 import six
 from six.moves.urllib import parse
 
-from sgsclient.common import http
-from sgsclient.openstack.common.apiclient import exceptions
+from sgsclient import client
 from sgsclient.openstack.common.apiclient import base as common_base
-
+from sgsclient.openstack.common.apiclient import exceptions
 
 SORT_DIR_VALUES = ('asc', 'desc')
 SORT_KEY_VALUES = ('id', 'status', 'name', 'created_at')
@@ -51,7 +50,7 @@ class Manager(common_base.HookableMixin):
 
     def __init__(self, api):
         self.api = api
-        if isinstance(self.api, http.SessionClient):
+        if isinstance(self.api, client.SessionClient):
             self.project_id = self.api.get_project_id()
         else:
             self.project_id = self.api.project_id
@@ -265,10 +264,25 @@ class ManagerWithFind(Manager):
         This isn't very efficient: it loads the entire list then filters on
         the Python side.
         """
+
+        # Want to search for all tenants here so that when attempting to delete
+        # that a user like admin doesn't get a failure when trying to delete
+        # another tenant's volume by name.
+        search_opts = {'all_tenants': 1}
+
+        # Pass 'name' or 'display_name' search_opts to server filtering to
+        # increase search performance.
+        if 'name' in kwargs:
+            search_opts['name'] = kwargs['name']
+        elif 'display_name' in kwargs:
+            search_opts['display_name'] = kwargs['display_name']
+
+        listing = self.list(search_opts=search_opts)
+
         found = []
         searches = kwargs.items()
 
-        for obj in self.list():
+        for obj in listing:
             try:
                 if all(getattr(obj, attr) == value
                        for (attr, value) in searches):

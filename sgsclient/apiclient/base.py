@@ -26,13 +26,13 @@ Base utilities to build API operation managers and objects on top of.
 import abc
 import copy
 
+import six
 from oslo_utils import strutils
 from oslo_utils import uuidutils
-import six
 from six.moves.urllib import parse
 
-from sgsclient.common.apiclient import exceptions
-from sgsclient.i18n import _
+from sgsclient.apiclient import exceptions
+from sgsclient._i18n import _
 
 
 def getid(obj):

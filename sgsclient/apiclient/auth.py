@@ -24,8 +24,7 @@ import os
 import six
 from stevedore import extension
 
-from sgsclient.common.apiclient import exceptions
-
+from sgsclient.apiclient import exceptions
 
 _discovered_plugins = {}
 

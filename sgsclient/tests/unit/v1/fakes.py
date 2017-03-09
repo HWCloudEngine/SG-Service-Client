@@ -15,7 +15,7 @@ try:
 except ImportError:
     import urllib.parse as urlparse
 
-from sgsclient.common import http as base_client
+from sgsclient import client as base_client
 from sgsclient.tests.unit import base
 from sgsclient.tests.unit import fakes
 from sgsclient.v1 import client

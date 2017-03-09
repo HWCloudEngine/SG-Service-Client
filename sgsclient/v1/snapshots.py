@@ -10,7 +10,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sgsclient.common import base
+from sgsclient import base
 
 
 class Snapshot(base.Resource):

@@ -10,7 +10,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sgsclient.common import base
+from sgsclient import base
 
 
 class Checkpoint(base.Resource):
@@ -76,3 +76,9 @@ class CheckpointManager(base.ManagerWithFind):
             checkpoint_id=checkpoint_id)
         body = None
         return self._create(url, body, 'rollback')
+
+    def reset_state(self, checkpoint_id, state):
+        body = {'status': state}
+        url = "/checkpoints/{checkpoint_id}/reset_status".format(
+            checkpoint_id=checkpoint_id)
+        self.api.json_request('POST', url, data=body)

@@ -10,7 +10,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sgsclient.common import base
+from sgsclient import base
 
 
 class Backup(base.Resource):
@@ -79,3 +79,16 @@ class BackupManager(base.ManagerWithFind):
             backup_id=backup_id)
         body = {"restore": {"volume_id": volume_id}}
         return self._create(url, body, 'restore')
+
+    def export_record(self, backup_id):
+        url = "/backups/{backup_id}/export_record".format(backup_id=backup_id)
+        return self._create(url, None, 'backup-record')
+
+    def import_record(self, backup_type, driver_data):
+        backup_record = {
+            'backup_type': backup_type,
+            'driver_data': driver_data
+        }
+        url = "/backups/import_record"
+        body = {'backup-record': backup_record}
+        return self._create(url, data=body, response_key='backup')

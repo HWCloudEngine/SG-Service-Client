@@ -19,22 +19,21 @@ from __future__ import print_function
 import argparse
 import sys
 
-from keystoneclient.auth.identity.generic import password
-from keystoneclient.auth.identity.generic import token
-from keystoneclient.auth.identity import v3 as identity
+import six
+import six.moves.urllib.parse as urlparse
 from keystoneclient import discover
 from keystoneclient import exceptions as ks_exc
 from keystoneclient import session as ksession
+from keystoneclient.auth.identity import v3 as identity
+from keystoneclient.auth.identity.generic import password
+from keystoneclient.auth.identity.generic import token
 from oslo_log import handlers
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 from oslo_utils import importutils
 
-import six
-import six.moves.urllib.parse as urlparse
-
 import sgsclient
-from sgsclient import client as sgs_client
+from sgsclient import client as sgs_client, utils
 from sgsclient.common import utils
 from sgsclient.openstack.common.apiclient import exceptions as exc
 
@@ -443,15 +442,12 @@ class HelpFormatter(argparse.HelpFormatter):
 def main(args=sys.argv[1:]):
     try:
         SGServiceShell().main(args)
-
     except KeyboardInterrupt:
-        print('... terminating sgs client', file=sys.stderr)
-        sys.exit(1)
+        print("... terminating cinder client", file=sys.stderr)
+        sys.exit(130)
     except Exception as e:
-        if '--debug' in args or '-d' in args:
-            raise
-        else:
-            print(encodeutils.safe_encode(six.text_type(e)), file=sys.stderr)
+        logger.debug(e, exc_info=1)
+        print("ERROR: %s" % six.text_type(e), file=sys.stderr)
         sys.exit(1)
 
 

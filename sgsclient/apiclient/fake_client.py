@@ -30,7 +30,7 @@ import requests
 import six
 from six.moves.urllib import parse
 
-from sgsclient.common.apiclient import client
+from sgsclient.apiclient import client
 
 
 def assert_has_keys(dct, required=None, optional=None):
