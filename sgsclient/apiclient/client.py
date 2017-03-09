@@ -36,7 +36,7 @@ from oslo_log import log as logging
 from oslo_utils import importutils
 import requests
 
-from sgsclient.i18n import _
+from sgsclient._i18n import _
 from sgsclient.openstack.common.apiclient import exceptions
 
 
@@ -270,8 +270,8 @@ class HTTPClient(object):
         Example:
 
         >>> def test_clients():
-        ...     from keystoneclient.auth import keystone
-        ...     from sgsclient.common.apiclient import client
+        ...     from sgsclient.apiclient import client
+                from keystoneclient.auth import keystone
         ...     auth = keystone.KeystoneAuthPlugin(
         ...         username="user", password="pass", tenant_name="tenant",
         ...         auth_url="http://auth:5000/v2.0")

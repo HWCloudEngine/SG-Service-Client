@@ -20,7 +20,7 @@ mock_request_return = ({}, {'replication': {'name': 'fake_name'}})
 
 
 class ReplicationsTest(base.TestCaseShell):
-    @mock.patch('sgsclient.common.http.HTTPClient.json_request')
+    @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_list_replications_with_marker_limit(self, mock_request):
         mock_request.return_value = mock_request_return
         cs.replications.list(marker=1234, limit=2)
@@ -29,7 +29,7 @@ class ReplicationsTest(base.TestCaseShell):
             '/replications?limit=2&marker=1234',
             headers={})
 
-    @mock.patch('sgsclient.common.http.HTTPClient.json_request')
+    @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_list_replications_with_sort_key_dir(self, mock_request):
         mock_request.return_value = mock_request_return
         cs.replications.list(sort_key='id', sort_dir='asc')
@@ -38,13 +38,13 @@ class ReplicationsTest(base.TestCaseShell):
             '/replications?sort_dir=asc&sort_key=id',
             headers={})
 
-    @mock.patch('sgsclient.common.http.HTTPClient.json_request')
+    @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_list_replications_with_invalid_sort_key(self, mock_request):
         self.assertRaises(ValueError,
                           cs.replications.list, sort_key='invalid',
                           sort_dir='asc')
 
-    @mock.patch('sgsclient.common.http.HTTPClient.json_request')
+    @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_create_replication(self, mock_request):
         mock_request.return_value = mock_request_return
         cs.replications.create('replication name', 'master_volume',
@@ -60,7 +60,7 @@ class ReplicationsTest(base.TestCaseShell):
                     'description': 'description'}},
             headers={})
 
-    @mock.patch('sgsclient.common.http.HTTPClient.raw_request')
+    @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_delete_replication(self, mock_request):
         mock_request.return_value = mock_request_return
         cs.replications.delete('1')
@@ -69,7 +69,7 @@ class ReplicationsTest(base.TestCaseShell):
             '/replications/1',
             headers={})
 
-    @mock.patch('sgsclient.common.http.HTTPClient.json_request')
+    @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_create_update(self, mock_request):
         mock_request.return_value = mock_request_return
         cs.replications.update('1', {'name': 'Test name.'})
@@ -78,7 +78,7 @@ class ReplicationsTest(base.TestCaseShell):
             '/replications/1',
             data={'replication': {'name': 'Test name.'}}, headers={})
 
-    @mock.patch('sgsclient.common.http.HTTPClient.json_request')
+    @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_show_replication(self, mock_request):
         mock_request.return_value = mock_request_return
         cs.replications.get('1')
@@ -87,7 +87,7 @@ class ReplicationsTest(base.TestCaseShell):
             '/replications/1',
             headers={})
 
-    @mock.patch('sgsclient.common.http.HTTPClient.json_request')
+    @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_show_replication_with_headers(self, mock_request):
         mock_request.return_value = mock_request_return
         cs.replications.get('1', session_id='fake_session_id')
@@ -96,7 +96,7 @@ class ReplicationsTest(base.TestCaseShell):
             '/replications/1',
             headers={'X-Configuration-Session': 'fake_session_id'})
 
-    @mock.patch('sgsclient.common.http.HTTPClient.json_request')
+    @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_enable_replication(self, mock_request):
         mock_request.return_value = mock_request_return
         replication_id = "1"
@@ -107,7 +107,7 @@ class ReplicationsTest(base.TestCaseShell):
             data={"replication": {"replication_id": "1"}},
             headers={})
 
-    @mock.patch('sgsclient.common.http.HTTPClient.json_request')
+    @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_disable_replication(self, mock_request):
         mock_request.return_value = mock_request_return
         replication_id = "1"
@@ -118,7 +118,7 @@ class ReplicationsTest(base.TestCaseShell):
             data={"replication": {"replication_id": "1"}},
             headers={})
 
-    @mock.patch('sgsclient.common.http.HTTPClient.json_request')
+    @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_failover_replication(self, mock_request):
         mock_request.return_value = mock_request_return
         replication_id = "1"
@@ -129,7 +129,7 @@ class ReplicationsTest(base.TestCaseShell):
             data={"replication": {"replication_id": "1"}},
             headers={})
 
-    @mock.patch('sgsclient.common.http.HTTPClient.json_request')
+    @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_reverse_replication(self, mock_request):
         mock_request.return_value = mock_request_return
         replication_id = "1"

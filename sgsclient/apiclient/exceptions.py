@@ -24,7 +24,7 @@ import sys
 
 import six
 
-from sgsclient.i18n import _
+from sgsclient._i18n import _
 
 
 class ClientException(Exception):

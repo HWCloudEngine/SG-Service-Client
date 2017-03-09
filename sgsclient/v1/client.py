@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sgsclient.common import http
+from sgsclient import client
 from sgsclient.v1 import backups
 from sgsclient.v1 import checkpoints
 from sgsclient.v1 import replicates
@@ -32,7 +32,7 @@ class Client(object):
 
     def __init__(self, *args, **kwargs):
         """Initialize a new client for the sgs v1 API."""
-        self.http_client = http._construct_http_client(*args, **kwargs)
+        self.http_client = client._construct_http_client(*args, **kwargs)
         self.replications = replications.ReplicationManager(self.http_client)
         self.volumes = volumes.VolumeManager(self.http_client)
         self.replicates = replicates.ReplicateManager(self.http_client)

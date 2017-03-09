@@ -10,7 +10,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sgsclient.common import utils
+import argparse
+import os
+
+from sgsclient import base
+from sgsclient import exceptions
+from sgsclient import shell_utils
+from sgsclient import utils
 
 
 #################
@@ -85,30 +91,209 @@ def do_replication_delete(cs, args):
         print("Delete for replication %s failed: %s" % (replication, e))
 
 
-@utils.arg('replication_id',
-           metavar='<replication-id>',
-           help='ID of replication.')
+@utils.arg('replication',
+           metavar='<replication>',
+           help='ID or name of replication.')
 def do_replication_show(cs, args):
     """Get a replication."""
-    replication = cs.replications.get(args.replication_id)
+    replication = shell_utils.find_replication(cs, args.replication)
     utils.print_dict(replication.to_dict())
+
+
+@utils.arg('--all-tenants',
+           dest='all_tenants',
+           metavar='<0|1>',
+           nargs='?',
+           type=int,
+           const=1,
+           default=0,
+           help='Shows details for all tenants. Admin only.')
+@utils.arg('--all_tenants',
+           nargs='?',
+           type=int,
+           const=1,
+           help=argparse.SUPPRESS)
+@utils.arg('--name',
+           metavar='<name>',
+           default=None,
+           help='Filters results by a name. Default=None.')
+@utils.arg('--status',
+           metavar='<status>',
+           default=None,
+           help='Filters results by a status. Default=None.')
+@utils.arg('--marker',
+           metavar='<marker>',
+           default=None,
+           help='Begin returning plans that appear later in the plan '
+                'list than that represented by this plan id. '
+                'Default=None.')
+@utils.arg('--limit',
+           metavar='<limit>',
+           default=None,
+           help='Maximum number of plans to return. Default=None.')
+@utils.arg('--sort_key',
+           metavar='<sort_key>',
+           default=None,
+           help=argparse.SUPPRESS)
+@utils.arg('--sort_dir',
+           metavar='<sort_dir>',
+           default=None,
+           help=argparse.SUPPRESS)
+@utils.arg('--sort',
+           metavar='<key>[:<direction>]',
+           default=None,
+           help=(('Comma-separated list of sort keys and directions in the '
+                  'form of <key>[:<asc|desc>]. '
+                  'Valid keys: %s. '
+                  'Default=None.') % ', '.join(base.SORT_KEY_VALUES)))
+@utils.arg('--tenant',
+           type=str,
+           dest='tenant',
+           nargs='?',
+           metavar='<tenant>',
+           help='Display information from single tenant (Admin only).')
+def do_replication_list(cs, args):
+    """list volumes."""
+    all_tenants = 1 if args.tenant else \
+        int(os.environ.get("ALL_TENANTS", args.all_tenants))
+    search_opts = {
+        'all_tenants': all_tenants,
+        'project_id': args.tenant,
+        'name': args.name,
+        'status': args.status,
+    }
+
+    if args.sort and (args.sort_key or args.sort_dir):
+        raise exceptions.CommandError(
+            'The --sort_key and --sort_dir arguments are deprecated and are '
+            'not supported with --sort.')
+
+    replications = cs.replications.list(search_opts=search_opts,
+                                        marker=args.marker,
+                                        limit=args.limit,
+                                        sort_key=args.sort_key,
+                                        sort_dir=args.sort_dir, sort=args.sort)
+    columns = ['Id', 'Name', 'Status', 'Master volume', 'Slave volume']
+
+    if args.sort_key or args.sort_dir or args.sort:
+        sortby_index = None
+    else:
+        sortby_index = 0
+    utils.print_list(replications, columns, exclude_unavailable=True,
+                     sortby_index=sortby_index)
+
+
+@utils.arg('replication', metavar='<replication>',
+           help='ID of the replication to modify.')
+@utils.arg('--state', metavar='<state>',
+           default='enabled',
+           help='The state to assign to the replication.')
+def do_replication_reset_state(cs, args):
+    replication = args.replication
+    try:
+        cs.replications.reset_state(replication, args.state)
+        print("Request to reset-state replication %s has been accepted." % (
+            replication))
+    except Exception as e:
+        print("Reset-state for replication %s failed: %s" % (replication, e))
 
 
 ################
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
-def do_get(cs, args):
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
+def do_show(cs, args):
     """Get a volume."""
-    volume = cs.volumes.get(args.volume_id)
+    volume = shell_utils.find_volume(cs, args.volume)
     utils.print_dict(volume.to_dict())
 
 
-@utils.arg('--checkpoint_id',
+@utils.arg('--all-tenants',
+           dest='all_tenants',
+           metavar='<0|1>',
+           nargs='?',
+           type=int,
+           const=1,
+           default=0,
+           help='Shows details for all tenants. Admin only.')
+@utils.arg('--all_tenants',
+           nargs='?',
+           type=int,
+           const=1,
+           help=argparse.SUPPRESS)
+@utils.arg('--name',
+           metavar='<name>',
+           default=None,
+           help='Filters results by a name. Default=None.')
+@utils.arg('--status',
+           metavar='<status>',
+           default=None,
+           help='Filters results by a status. Default=None.')
+@utils.arg('--marker',
+           metavar='<marker>',
+           default=None,
+           help='Begin returning plans that appear later in the plan '
+                'list than that represented by this plan id. '
+                'Default=None.')
+@utils.arg('--limit',
+           metavar='<limit>',
+           default=None,
+           help='Maximum number of plans to return. Default=None.')
+@utils.arg('--sort_key',
+           metavar='<sort_key>',
+           default=None,
+           help=argparse.SUPPRESS)
+@utils.arg('--sort_dir',
+           metavar='<sort_dir>',
+           default=None,
+           help=argparse.SUPPRESS)
+@utils.arg('--sort',
+           metavar='<key>[:<direction>]',
+           default=None,
+           help=(('Comma-separated list of sort keys and directions in the '
+                  'form of <key>[:<asc|desc>]. '
+                  'Valid keys: %s. '
+                  'Default=None.') % ', '.join(base.SORT_KEY_VALUES)))
+@utils.arg('--tenant',
+           type=str,
+           dest='tenant',
+           nargs='?',
+           metavar='<tenant>',
+           help='Display information from single tenant (Admin only).')
+def do_list(cs, args):
+    """list volumes."""
+    all_tenants = 1 if args.tenant else \
+        int(os.environ.get("ALL_TENANTS", args.all_tenants))
+    search_opts = {
+        'all_tenants': all_tenants,
+        'project_id': args.tenant,
+        'name': args.name,
+        'status': args.status,
+    }
+
+    if args.sort and (args.sort_key or args.sort_dir):
+        raise exceptions.CommandError(
+            'The --sort_key and --sort_dir arguments are deprecated and are '
+            'not supported with --sort.')
+
+    volumes = cs.volumes.list(search_opts=search_opts, marker=args.marker,
+                              limit=args.limit, sort_key=args.sort_key,
+                              sort_dir=args.sort_dir, sort=args.sort)
+    columns = ['Id', 'Name', 'Status', 'Replicate Status']
+
+    if args.sort_key or args.sort_dir or args.sort:
+        sortby_index = None
+    else:
+        sortby_index = 0
+    utils.print_list(volumes, columns, exclude_unavailable=True,
+                     sortby_index=sortby_index)
+
+
+@utils.arg('--checkpoint-id',
            metavar='<checkpoint-id>',
            help='ID of checkpoint.')
-@utils.arg('--snapshot_id',
+@utils.arg('--snapshot-id',
            metavar='<snapshot-id>',
            help='ID of snapshot.')
 @utils.arg('--name',
@@ -123,7 +308,7 @@ def do_get(cs, args):
 @utils.arg('--availability_zone',
            metavar='<availability-zone>',
            help='availability zone')
-def do_create(cs, args):
+def do_create_volume(cs, args):
     """Create a volume."""
     try:
         cs.volumes.create(checkpoint_id=args.checkpoint_id,
@@ -152,19 +337,20 @@ def do_enable_sg(cs, args):
     utils.print_dict(volume.to_dict())
 
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 def do_disable_sg(cs, args):
     """Disable volume's SG."""
-    volume = cs.volumes.disable(args.volume_id)
+    volume = shell_utils.find_volume(cs, args.volume)
+    volume = cs.volumes.disable(volume.id)
     utils.print_dict(volume.to_dict())
 
 
 # TODO(luobin): remove these following volume-actions from shell
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 @utils.arg('--instance_uuid',
            metavar='<instance-id>',
            help='ID of instance.')
@@ -184,65 +370,107 @@ def do_attach(cs, args):
     if mode not in ['rw', 'ro']:
         print("Attach mode must be rw or ro")
         return
-    cs.volumes.attach(args.volume_id, args.instance_uuid, args.mountpoint,
-                      args.mode, args.host_name)
+    volume = shell_utils.find_volume(cs, args.volume)
+    try:
+        cs.volumes.attach(volume.id, args.instance_uuid, args.mountpoint,
+                          args.mode, args.host_name)
+        print ("Request to attach volume %s has been accepted." % (
+            volume.id))
+    except Exception as e:
+        print ("Request to attach volume %s failed: %s." % (
+            volume.id, e))
 
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 def do_reserve(cs, args):
     """Mark SG-volume as reserved before attach."""
-    cs.volumes.reserve(args.volume_id)
+    volume = shell_utils.find_volume(cs, args.volume)
+    try:
+        cs.volumes.reserve(volume.id)
+        print ("Request to reserve volume %s has been accepted." % (
+            volume.id))
+    except Exception as e:
+        print ("Request to reserve volume %s failed: %s." % (
+            volume.id, e))
 
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 def do_unreserve(cs, args):
     """Unmark SG-volume as reserved before attach."""
-    cs.volumes.unreserve(args.volume_id)
+    volume = shell_utils.find_volume(cs, args.volume)
+    try:
+        cs.volumes.unreserve(volume.id)
+        print ("Request to unreserve volume %s has been accepted." % (
+            volume.id))
+    except Exception as e:
+        print ("Request to unreserve volume %s failed: %s." % (volume.id, e))
 
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 def do_initialize_connection(cs, args):
     """Initialize volume attachment."""
-    connection_info = cs.volumes.initialize_connection(args.volume_id)
+    volume = shell_utils.find_volume(cs, args.volume)
+    connection_info = cs.volumes.initialize_connection(volume.id)
     utils.print_dict(connection_info.to_dict())
 
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 def do_detach(cs, args):
     """Clear attachment metadata."""
-    cs.volumes.detach(args.volume_id)
+    volume = shell_utils.find_volume(cs, args.volume)
+    try:
+        cs.volumes.detach(volume.id)
+        print ("Request to detach volume %s has been accepted." % (
+            volume.id))
+    except Exception as e:
+        print ("Request to detach volume %s failed: %s." % (
+            volume.id, e))
 
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 def do_begin_detaching(cs, args):
     """Update volume status to 'detaching'."""
-    cs.volumes.begin_detaching(args.volume_id)
+    volume = shell_utils.find_volume(cs, args.volume)
+    try:
+        cs.volumes.begin_detaching(volume.id)
+        print ("Request to begin_detaching %s has been accepted." % (
+            volume.id))
+    except Exception as e:
+        print ("Request to begin_detaching %s failed: %s." % (
+            volume.id, e))
 
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 def do_roll_detaching(cs, args):
     """Roll back volume status to 'in-use'."""
-    cs.volumes.roll_detaching(args.volume_id)
+    volume = shell_utils.find_volume(cs, args.volume)
+    try:
+        cs.volumes.roll_detaching(volume.id)
+        print ("Request to roll_detaching volume %s has been accepted." % (
+            volume.id))
+    except Exception as e:
+        print ("Request to roll_detaching volume %s failed: %s." % (
+            volume.id, e))
 
 
 ###################
 
 # TODO(luobin): remove replicate-actions from shell
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 @utils.arg('peer_volume',
            metavar='<peer-volume>',
            help='ID of peer-volume.')
@@ -260,67 +488,72 @@ def do_replicate_create(cs, args):
     if mode not in ['master', 'slave']:
         print("Replicate mode must be master or slave")
         return
-    volume = cs.replicates.create(vollume_id=args.volume_id, mode=mode,
+    volume = shell_utils.find_volume(cs, args.volume)
+    volume = cs.replicates.create(volume_id=volume.id, mode=mode,
                                   replication_id=args.replication_id,
                                   peer_volume=args.peer_volume)
     utils.print_dict(volume.to_dict())
 
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 def do_replicate_enable(cs, args):
     """Enable volume's replicate."""
-    volume = cs.replicates.enable(args.volume_id)
+    volume = shell_utils.find_volume(cs, args.volume)
+    volume = cs.replicates.enable(volume.id)
     utils.print_dict(volume.to_dict())
 
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 def do_replicate_disable(cs, args):
     """Disable volume's replicate."""
-    volume = cs.replicates.disable(args.volume_id)
+    volume = shell_utils.find_volume(cs, args.volume)
+    volume = cs.replicates.disable(volume.id)
     utils.print_dict(volume.to_dict())
 
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 def do_replicate_delete(cs, args):
     """Delete volume's replicate."""
-    volume = args.volume_id
+    volume = shell_utils.find_volume(cs, args.volume)
     try:
-        cs.replicates.delete(args.volume_id)
+        cs.replicates.delete(volume.id)
         print("Request to delete volume %s replicate has been accepted." % (
             volume))
     except Exception as e:
         print("Delete for volume %s replicate failed: %s" % (volume, e))
 
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 def do_replicate_failover(cs, args):
     """Failover volume's replicate."""
-    volume = cs.replicates.failover(args.volume_id)
+    volume = shell_utils.find_volume(cs, args.volume)
+    volume = cs.replicates.failover(volume.id)
     utils.print_dict(volume.to_dict())
 
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 def do_replicate_reverse(cs, args):
     """Reverse volume's replicate."""
-    volume = cs.replicates.reverse(args.volume_id)
+    volume = shell_utils.find_volume(cs, args.volume)
+    volume = cs.replicates.reverse(volume.id)
     utils.print_dict(volume.to_dict())
 
 
 #######################
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 @utils.arg('--name',
            metavar='<name>',
            help='Name of snapshot.')
@@ -329,47 +562,135 @@ def do_replicate_reverse(cs, args):
            help='Description of snapshot.')
 def do_snapshot_create(cs, args):
     """Create snapshot."""
-    snapshot = cs.snapshots.create(args.volume_id, args.name, args.description)
+    volume = shell_utils.find_volume(cs, args.volume)
+    snapshot = cs.snapshots.create(volume.id, args.name, args.description)
     utils.print_dict(snapshot.to_dict())
 
 
-@utils.arg('snapshot_id',
-           metavar='<snapshot-id>',
-           help='ID of snapshot.')
+@utils.arg('snapshot',
+           metavar='<snapshot>',
+           help='ID or name of snapshot.')
 def do_snapshot_delete(cs, args):
     """Delete snapshot."""
-    snapshot = args.snapshot_id
+    snapshot = shell_utils.find_snapshot(cs, args.snapshot)
     try:
-        cs.snapshots.delete(snapshot)
+        cs.snapshots.delete(snapshot.id)
         print("Request to delete snapshot %s has been accepted." % (
-            snapshot))
+            snapshot.id))
     except Exception as e:
-        print("Delete for snapshot %s failed: %s" % (snapshot, e))
+        print("Delete for snapshot %s failed: %s" % (snapshot.id, e))
 
 
-@utils.arg('snapshot_id',
-           metavar='<snapshot-id>',
-           help='ID of snapshot.')
+@utils.arg('snapshot',
+           metavar='<snapshot>',
+           help='ID or name of snapshot.')
 def do_snapshot_show(cs, args):
     """Get snapshot."""
-    snapshot = cs.snapshots.get(args.snapshot_id)
+    snapshot = shell_utils.find_snapshot(cs, args.snapshot)
     utils.print_dict(snapshot.to_dict())
 
 
-@utils.arg('snapshot_id',
-           metavar='<snapshot-id>',
-           help='ID of snapshot.')
+@utils.arg('snapshot',
+           metavar='<snapshot>',
+           help='ID or name of snapshot.')
 def do_snapshot_rollback(cs, args):
     """Rollback snapshot."""
-    rollback = cs.snapshots.rollback(args.snapshot_id)
+    snapshot = shell_utils.find_snapshot(cs, args.snapshot)
+    rollback = cs.snapshots.rollback(snapshot.id)
     utils.print_dict(rollback.to_dict())
+
+
+@utils.arg('--all-tenants',
+           dest='all_tenants',
+           metavar='<0|1>',
+           nargs='?',
+           type=int,
+           const=1,
+           default=0,
+           help='Shows details for all tenants. Admin only.')
+@utils.arg('--all_tenants',
+           nargs='?',
+           type=int,
+           const=1,
+           help=argparse.SUPPRESS)
+@utils.arg('--name',
+           metavar='<name>',
+           default=None,
+           help='Filters results by a name. Default=None.')
+@utils.arg('--volume-id',
+           metavar='<volume_id>',
+           default=None,
+           help='Filters results by a volume ID. Default=None.')
+@utils.arg('--status',
+           metavar='<status>',
+           default=None,
+           help='Filters results by a status. Default=None.')
+@utils.arg('--marker',
+           metavar='<marker>',
+           default=None,
+           help='Begin returning plans that appear later in the plan '
+                'list than that represented by this plan id. '
+                'Default=None.')
+@utils.arg('--limit',
+           metavar='<limit>',
+           default=None,
+           help='Maximum number of plans to return. Default=None.')
+@utils.arg('--sort_key',
+           metavar='<sort_key>',
+           default=None,
+           help=argparse.SUPPRESS)
+@utils.arg('--sort_dir',
+           metavar='<sort_dir>',
+           default=None,
+           help=argparse.SUPPRESS)
+@utils.arg('--sort',
+           metavar='<key>[:<direction>]',
+           default=None,
+           help=(('Comma-separated list of sort keys and directions in the '
+                  'form of <key>[:<asc|desc>]. '
+                  'Valid keys: %s. '
+                  'Default=None.') % ', '.join(base.SORT_KEY_VALUES)))
+@utils.arg('--tenant',
+           type=str,
+           dest='tenant',
+           nargs='?',
+           metavar='<tenant>',
+           help='Display information from single tenant (Admin only).')
+def do_snapshot_list(cs, args):
+    """list snapshots."""
+    all_tenants = 1 if args.tenant else \
+        int(os.environ.get("ALL_TENANTS", args.all_tenants))
+    search_opts = {
+        'all_tenants': all_tenants,
+        'project_id': args.tenant,
+        'name': args.name,
+        'status': args.status,
+        'volume_id': args.volume_id
+    }
+
+    if args.sort and (args.sort_key or args.sort_dir):
+        raise exceptions.CommandError(
+            'The --sort_key and --sort_dir arguments are deprecated and are '
+            'not supported with --sort.')
+
+    snapshots = cs.snapshots.list(search_opts=search_opts, marker=args.marker,
+                                  limit=args.limit, sort_key=args.sort_key,
+                                  sort_dir=args.sort_dir, sort=args.sort)
+    columns = ['Id', 'Name', 'Status', 'Volume id']
+
+    if args.sort_key or args.sort_dir or args.sort:
+        sortby_index = None
+    else:
+        sortby_index = 0
+    utils.print_list(snapshots, columns, exclude_unavailable=True,
+                     sortby_index=sortby_index)
 
 
 ####################
 
-@utils.arg('volume_id',
-           metavar='<volume-id>',
-           help='ID of volume.')
+@utils.arg('volume',
+           metavar='<volume>',
+           help='ID or name of volume.')
 @utils.arg('--name',
            metavar='<name>',
            help='Name of backup.')
@@ -394,53 +715,141 @@ def do_backup_create(cs, args):
     if destination not in ['local', 'remote']:
         print("Backup destination must be local or remote")
         return
-    backup = cs.backups.create(volume_id=args.volume_id, name=args.name,
+    volume = shell_utils.find_volume(cs, args.volume)
+    backup = cs.backups.create(volume_id=volume.id, name=args.name,
                                description=args.description,
                                type=type, destination=destination)
     utils.print_dict(backup.to_dict())
 
 
-@utils.arg('backup_id',
-           metavar='<backup-id>',
-           help='ID of backup.')
+@utils.arg('backup',
+           metavar='<backup>',
+           help='ID or name of backup.')
 def do_backup_delete(cs, args):
     """Delete snapshot."""
-    backup = args.backup_id
+    backup = shell_utils.find_backup(cs, args.backup)
     try:
-        cs.backups.delete(backup)
+        cs.backups.delete(backup.id)
         print("Request to delete backup %s has been accepted." % (
-            backup))
+            backup.id))
     except Exception as e:
-        print("Delete for backup %s failed: %s" % (backup, e))
+        print("Delete for backup %s failed: %s" % (backup.id, e))
 
 
-@utils.arg('backup_id',
-           metavar='<backup-id>',
-           help='ID of backup.')
+@utils.arg('backup',
+           metavar='<backup>',
+           help='ID or name of backup.')
 def do_backup_show(cs, args):
     """Get backup."""
-    backup = cs.backups.get(args.backup_id)
+    backup = shell_utils.find_backup(cs, args.backup)
     utils.print_dict(backup.to_dict())
 
 
-@utils.arg('backup_id',
-           metavar='<backup-id>',
-           help='ID of backup.')
+@utils.arg('backup',
+           metavar='<backup>',
+           help='ID or name of backup.')
 @utils.arg('volume_id',
            metavar='<volume-id>',
-           help='ID of restoring volume.')
+           help='ID of restoring cinder volume.')
 def do_backup_restore(cs, args):
     """Restore backup."""
-    backup = cs.backups.restore(args.backup_id, args.volume_id)
-    utils.print_dict(backup.to_dict())
+    backup = shell_utils.find_backup(cs, args.backup)
+    restore = cs.backups.restore(backup.id, args.volume_id)
+    utils.print_dict(restore.to_dict())
+
+
+@utils.arg('--all-tenants',
+           dest='all_tenants',
+           metavar='<0|1>',
+           nargs='?',
+           type=int,
+           const=1,
+           default=0,
+           help='Shows details for all tenants. Admin only.')
+@utils.arg('--all_tenants',
+           nargs='?',
+           type=int,
+           const=1,
+           help=argparse.SUPPRESS)
+@utils.arg('--name',
+           metavar='<name>',
+           default=None,
+           help='Filters results by a name. Default=None.')
+@utils.arg('--volume-id',
+           metavar='<volume_id>',
+           default=None,
+           help='Filters results by a volume ID. Default=None.')
+@utils.arg('--status',
+           metavar='<status>',
+           default=None,
+           help='Filters results by a status. Default=None.')
+@utils.arg('--marker',
+           metavar='<marker>',
+           default=None,
+           help='Begin returning plans that appear later in the plan '
+                'list than that represented by this plan id. '
+                'Default=None.')
+@utils.arg('--limit',
+           metavar='<limit>',
+           default=None,
+           help='Maximum number of plans to return. Default=None.')
+@utils.arg('--sort_key',
+           metavar='<sort_key>',
+           default=None,
+           help=argparse.SUPPRESS)
+@utils.arg('--sort_dir',
+           metavar='<sort_dir>',
+           default=None,
+           help=argparse.SUPPRESS)
+@utils.arg('--sort',
+           metavar='<key>[:<direction>]',
+           default=None,
+           help=(('Comma-separated list of sort keys and directions in the '
+                  'form of <key>[:<asc|desc>]. '
+                  'Valid keys: %s. '
+                  'Default=None.') % ', '.join(base.SORT_KEY_VALUES)))
+@utils.arg('--tenant',
+           type=str,
+           dest='tenant',
+           nargs='?',
+           metavar='<tenant>',
+           help='Display information from single tenant (Admin only).')
+def do_backup_list(cs, args):
+    """list backups."""
+    all_tenants = 1 if args.tenant else \
+        int(os.environ.get("ALL_TENANTS", args.all_tenants))
+    search_opts = {
+        'all_tenants': all_tenants,
+        'project_id': args.tenant,
+        'name': args.name,
+        'status': args.status,
+        'volume_id': args.volume_id
+    }
+
+    if args.sort and (args.sort_key or args.sort_dir):
+        raise exceptions.CommandError(
+            'The --sort_key and --sort_dir arguments are deprecated and are '
+            'not supported with --sort.')
+
+    backups = cs.backups.list(search_opts=search_opts, marker=args.marker,
+                              limit=args.limit, sort_key=args.sort_key,
+                              sort_dir=args.sort_dir, sort=args.sort)
+    columns = ['Id', 'Name', 'Status', 'Volume id']
+
+    if args.sort_key or args.sort_dir or args.sort:
+        sortby_index = None
+    else:
+        sortby_index = 0
+    utils.print_list(backups, columns, exclude_unavailable=True,
+                     sortby_index=sortby_index)
 
 
 #############################
 
 
-@utils.arg('replication_id',
-           metavar='<replication-id>',
-           help='ID of checkpoint.')
+@utils.arg('replication',
+           metavar='<replication>',
+           help='ID or name of checkpoint.')
 @utils.arg('--name',
            metavar='<name>',
            help='Name of checkpoint.')
@@ -449,38 +858,142 @@ def do_backup_restore(cs, args):
            help='Description of checkpoint.')
 def do_checkpoint_create(cs, args):
     """Create checkpoint."""
-    checkpoint = cs.checkpoints.create(args.volume_id, args.name,
+    replication = shell_utils.find_replication(cs, args.replication)
+    checkpoint = cs.checkpoints.create(replication.id, args.name,
                                        args.description)
     utils.print_dict(checkpoint.to_dict())
 
 
-@utils.arg('checkpoint_id',
-           metavar='<checkpoint-id>',
-           help='ID of checkpoint.')
+@utils.arg('checkpoint',
+           metavar='<checkpoint>',
+           help='ID or name of checkpoint.')
 def do_checkpoint_delete(cs, args):
     """Delete checkpoint."""
-    checkpoint = args.checkpoint_id
+    checkpoint = shell_utils.find_checkpoint(cs, args.checkpoint)
     try:
-        cs.checkpoints.delete(checkpoint)
+        cs.checkpoints.delete(checkpoint.id)
         print("Request to delete checkpoint %s has been accepted." % (
-            checkpoint))
+            checkpoint.id))
     except Exception as e:
-        print("Delete for checkpoint %s failed: %s" % (checkpoint, e))
+        print("Delete for checkpoint %s failed: %s" % (checkpoint.id, e))
 
 
-@utils.arg('checkpoint_id',
-           metavar='<checkpoint-id>',
-           help='ID of checkpoint.')
+@utils.arg('checkpoint',
+           metavar='<checkpoint>',
+           help='ID or name of checkpoint.')
 def do_checkpoint_show(cs, args):
     """Get checkpoint."""
-    checkpoint = cs.checkpoints.get(args.checkpoint_id)
+    checkpoint = shell_utils.find_checkpoint(cs, args.checkpoint)
     utils.print_dict(checkpoint.to_dict())
 
 
-@utils.arg('checkpoint_id',
-           metavar='<checkpoint-id>',
-           help='ID of checkpoint.')
+@utils.arg('checkpoint',
+           metavar='<checkpoint>',
+           help='ID or name of checkpoint.')
 def do_checkpoint_rollback(cs, args):
     """Rollback checkpoint."""
-    rollback = cs.checkpoints.rollback(args.checkpoint_id)
+    checkpoint = shell_utils.find_checkpoint(cs, args.checkpoint)
+    rollback = cs.checkpoints.rollback(checkpoint.id)
     utils.print_dict(rollback.to_dict())
+
+
+@utils.arg('--all-tenants',
+           dest='all_tenants',
+           metavar='<0|1>',
+           nargs='?',
+           type=int,
+           const=1,
+           default=0,
+           help='Shows details for all tenants. Admin only.')
+@utils.arg('--all_tenants',
+           nargs='?',
+           type=int,
+           const=1,
+           help=argparse.SUPPRESS)
+@utils.arg('--name',
+           metavar='<name>',
+           default=None,
+           help='Filters results by a name. Default=None.')
+@utils.arg('--replication-id',
+           metavar='<replication_id>',
+           default=None,
+           help='Filters results by a replication ID. Default=None.')
+@utils.arg('--status',
+           metavar='<status>',
+           default=None,
+           help='Filters results by a status. Default=None.')
+@utils.arg('--marker',
+           metavar='<marker>',
+           default=None,
+           help='Begin returning plans that appear later in the plan '
+                'list than that represented by this plan id. '
+                'Default=None.')
+@utils.arg('--limit',
+           metavar='<limit>',
+           default=None,
+           help='Maximum number of plans to return. Default=None.')
+@utils.arg('--sort_key',
+           metavar='<sort_key>',
+           default=None,
+           help=argparse.SUPPRESS)
+@utils.arg('--sort_dir',
+           metavar='<sort_dir>',
+           default=None,
+           help=argparse.SUPPRESS)
+@utils.arg('--sort',
+           metavar='<key>[:<direction>]',
+           default=None,
+           help=(('Comma-separated list of sort keys and directions in the '
+                  'form of <key>[:<asc|desc>]. '
+                  'Valid keys: %s. '
+                  'Default=None.') % ', '.join(base.SORT_KEY_VALUES)))
+@utils.arg('--tenant',
+           type=str,
+           dest='tenant',
+           nargs='?',
+           metavar='<tenant>',
+           help='Display information from single tenant (Admin only).')
+def do_checkpoint_list(cs, args):
+    """list checkpoints."""
+    all_tenants = 1 if args.tenant else \
+        int(os.environ.get("ALL_TENANTS", args.all_tenants))
+    search_opts = {
+        'all_tenants': all_tenants,
+        'project_id': args.tenant,
+        'name': args.name,
+        'status': args.status,
+        'replication_id': args.replication_id
+    }
+
+    if args.sort and (args.sort_key or args.sort_dir):
+        raise exceptions.CommandError(
+            'The --sort_key and --sort_dir arguments are deprecated and are '
+            'not supported with --sort.')
+
+    checkpoints = cs.checkpoints.list(search_opts=search_opts,
+                                      marker=args.marker,
+                                      limit=args.limit, sort_key=args.sort_key,
+                                      sort_dir=args.sort_dir, sort=args.sort)
+    columns = ['Id', 'Name', 'Status', 'Replication id']
+
+    if args.sort_key or args.sort_dir or args.sort:
+        sortby_index = None
+    else:
+        sortby_index = 0
+    utils.print_list(checkpoints, columns, exclude_unavailable=True,
+                     sortby_index=sortby_index)
+
+
+@utils.arg('checkpoint', metavar='<checkpoint>',
+           help='ID or name of the checkpoint to modify.')
+@utils.arg('--state', metavar='<state>',
+           default='available',
+           help='The state to assign to the checkpoint.')
+def do_checkpoint_reset_state(cs, args):
+    checkpoint = shell_utils.find_checkpoint(cs, args.checkpoint)
+    try:
+        cs.checkpoints.reset_state(checkpoint.id, args.state)
+        print("Request to reset-state checkpoint %s has been accepted." % (
+            checkpoint.id))
+    except Exception as e:
+        print("Reset-state for checkpoint %s failed: %s" % (checkpoint.id, e))
