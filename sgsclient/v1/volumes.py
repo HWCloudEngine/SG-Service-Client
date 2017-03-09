@@ -31,7 +31,7 @@ class VolumeManager(base.ManagerWithFind):
                            'availability_zone': availability_zone,
                            }}
         url = "/volumes"
-        return self._create(url, body, 'volume')
+        self.api.json_request('POST', url, data=body)
 
     def list(self, detailed=False, search_opts=None, marker=None, limit=None,
              sort_key=None, sort_dir=None, sort=None):
@@ -125,5 +125,5 @@ class VolumeManager(base.ManagerWithFind):
         url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
         resp, body = self.api.json_request('POST', url, data=data)
 
-        if body is not None:
+        if body is not None and isinstance(body, dict):
             return self.resource_class(self, body[response_key])

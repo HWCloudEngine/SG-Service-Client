@@ -85,6 +85,10 @@ class ReplicationManager(base.ManagerWithFind):
     def reverse(self, replication_id):
         return self._action("reverse", replication_id)
 
+    def reset_state(self, replication_id, state):
+        info = {'status': state}
+        return self._action('reset_status', replication_id, info)
+
     def _action(self, action, replication_id, info=None):
         """Perform a replication "action."
         """
@@ -93,5 +97,5 @@ class ReplicationManager(base.ManagerWithFind):
             replication_id=replication_id)
         resp, body = self.api.json_request('POST', url, data=data)
 
-        if body is not None:
+        if body is not None and isinstance(body, dict):
             return self.resource_class(self, body["replication"])
