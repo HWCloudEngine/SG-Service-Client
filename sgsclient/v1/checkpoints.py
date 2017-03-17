@@ -51,8 +51,10 @@ class CheckpointManager(base.ManagerWithFind):
             sort_dir=sort_dir, sort=sort)
         return self._list(url, 'checkpoints')
 
-    def update(self, checkpoint_id, data):
-        body = {"checkpoint": data}
+    def update(self, checkpoint_id, **kwargs):
+        if not kwargs:
+            return
+        body = {"checkpoint": kwargs}
         return self._update('/checkpoints/{checkpoint_id}'
                             .format(checkpoint_id=checkpoint_id),
                             body, "checkpoint")

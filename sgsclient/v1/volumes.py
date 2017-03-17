@@ -56,8 +56,10 @@ class VolumeManager(base.ManagerWithFind):
             sort_dir=sort_dir, sort=sort)
         return self._list(url, 'volumes')
 
-    def update(self, volume_id, data):
-        body = {"volume": data}
+    def update(self, volume_id, **kwargs):
+        if not kwargs:
+            return
+        body = {"volume": kwargs}
         return self._update('/volumes/{volume_id}'
                             .format(volume_id=volume_id),
                             body, "volume")

@@ -199,6 +199,33 @@ def do_replication_reset_state(cs, args):
         print("Reset-state for replication %s failed: %s" % (replication, e))
 
 
+@utils.arg('replication',
+           metavar='<replication>',
+           help='Name or ID of replication to update.')
+@utils.arg('--name',
+           nargs='?',
+           metavar='<name>',
+           help='New name for replication.')
+@utils.arg('--description',
+           nargs='?',
+           metavar='<description>',
+           help='New description for replication.')
+def do_replication_update(cs, args):
+    kwargs = {}
+    if args.name is not None:
+        kwargs['name'] = args.name
+    if args.description is not None:
+        kwargs['description'] = args.description
+
+    if not kwargs:
+        msg = 'Must supply either name or description.'
+        raise exceptions.ClientException(code=1, message=msg)
+
+    replication = shell_utils.find_replication(cs, args.replication)
+    replication = cs.replications.update(replication.id, kwargs)
+    utils.print_dict(replication.to_dict())
+
+
 ################
 
 @utils.arg('volume',
@@ -345,6 +372,33 @@ def do_disable_sg(cs, args):
     """Disable volume's SG."""
     volume = shell_utils.find_volume(cs, args.volume)
     volume = cs.volumes.disable(volume.id)
+    utils.print_dict(volume.to_dict())
+
+
+@utils.arg('volume',
+           metavar='<volume>',
+           help='Name or ID of volume to update.')
+@utils.arg('--name',
+           nargs='?',
+           metavar='<name>',
+           help='New name for volume.')
+@utils.arg('--description',
+           nargs='?',
+           metavar='<description>',
+           help='New description for volume.')
+def do_update(cs, args):
+    kwargs = {}
+    if args.name is not None:
+        kwargs['name'] = args.name
+    if args.description is not None:
+        kwargs['description'] = args.description
+
+    if not kwargs:
+        msg = 'Must supply either name or description.'
+        raise exceptions.ClientException(code=1, message=msg)
+
+    volume = shell_utils.find_volume(cs, args.volume)
+    volume = cs.volumes.update(volume.id, kwargs)
     utils.print_dict(volume.to_dict())
 
 
@@ -687,6 +741,33 @@ def do_snapshot_list(cs, args):
                      sortby_index=sortby_index)
 
 
+@utils.arg('snapshot',
+           metavar='<snapshot>',
+           help='Name or ID of snapshot to update.')
+@utils.arg('--name',
+           nargs='?',
+           metavar='<name>',
+           help='New name for snapshot.')
+@utils.arg('--description',
+           nargs='?',
+           metavar='<description>',
+           help='New description for snapshot.')
+def do_snapshot_update(cs, args):
+    kwargs = {}
+    if args.name is not None:
+        kwargs['name'] = args.name
+    if args.description is not None:
+        kwargs['description'] = args.description
+
+    if not kwargs:
+        msg = 'Must supply either name or description.'
+        raise exceptions.ClientException(code=1, message=msg)
+
+    snapshot = shell_utils.find_snapshot(cs, args.snapshot)
+    snapshot = cs.snapshots.update(snapshot.id, kwargs)
+    utils.print_dict(snapshot.to_dict())
+
+
 ####################
 
 @utils.arg('volume',
@@ -892,9 +973,35 @@ def _extract_driver_data(args):
             driver_data[key] = value
     return driver_data
 
+
+@utils.arg('backup',
+           metavar='<backup>',
+           help='Name or ID of backup to update.')
+@utils.arg('--name',
+           nargs='?',
+           metavar='<name>',
+           help='New name for backup.')
+@utils.arg('--description',
+           nargs='?',
+           metavar='<description>',
+           help='New description for backup.')
+def do_backup_update(cs, args):
+    kwargs = {}
+    if args.name is not None:
+        kwargs['name'] = args.name
+    if args.description is not None:
+        kwargs['description'] = args.description
+
+    if not kwargs:
+        msg = 'Must supply either name or description.'
+        raise exceptions.ClientException(code=1, message=msg)
+
+    backup = shell_utils.find_backup(cs, args.backup)
+    backup = cs.backups.update(backup.id, kwargs)
+    utils.print_dict(backup.to_dict())
+
+
 #############################
-
-
 @utils.arg('replication',
            metavar='<replication>',
            help='ID or name of checkpoint.')
@@ -1045,3 +1152,30 @@ def do_checkpoint_reset_state(cs, args):
             checkpoint.id))
     except Exception as e:
         print("Reset-state for checkpoint %s failed: %s" % (checkpoint.id, e))
+
+
+@utils.arg('checkpoint',
+           metavar='<checkpoint>',
+           help='Name or ID of checkpoint to update.')
+@utils.arg('--name',
+           nargs='?',
+           metavar='<name>',
+           help='New name for checkpoint.')
+@utils.arg('--description',
+           nargs='?',
+           metavar='<description>',
+           help='New description for checkpoint.')
+def do_checkpoint_update(cs, args):
+    kwargs = {}
+    if args.name is not None:
+        kwargs['name'] = args.name
+    if args.description is not None:
+        kwargs['description'] = args.description
+
+    if not kwargs:
+        msg = 'Must supply either name or description.'
+        raise exceptions.ClientException(code=1, message=msg)
+
+    checkpoint = shell_utils.find_checkpoint(cs, args.checkpoint)
+    checkpoint = cs.checkpoints.update(checkpoint.id, kwargs)
+    utils.print_dict(checkpoint.to_dict())

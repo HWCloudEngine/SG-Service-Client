@@ -54,8 +54,10 @@ class BackupManager(base.ManagerWithFind):
             sort_dir=sort_dir, sort=sort)
         return self._list(url, 'backups')
 
-    def update(self, backup_id, data):
-        body = {"backup": data}
+    def update(self, backup_id, **kwargs):
+        if not kwargs:
+            return
+        body = {"backup": kwargs}
         return self._update('/backups/{backup_id}'
                             .format(backup_id=backup_id),
                             body, "backup")

@@ -52,8 +52,10 @@ class SnapshotManager(base.ManagerWithFind):
             sort_dir=sort_dir, sort=sort)
         return self._list(url, 'snapshots')
 
-    def update(self, snapshot_id, data):
-        body = {"snapshot": data}
+    def update(self, snapshot_id, **kwargs):
+        if not kwargs:
+            return
+        body = {"snapshot": kwargs}
         return self._update('/snapshots/{snapshot_id}'
                             .format(snapshot_id=snapshot_id),
                             body, "snapshot")

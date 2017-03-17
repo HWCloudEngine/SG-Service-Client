@@ -53,8 +53,10 @@ class ReplicationManager(base.ManagerWithFind):
             sort_dir=sort_dir, sort=sort)
         return self._list(url, 'replications')
 
-    def update(self, replication_id, data):
-        body = {"replication": data}
+    def update(self, replication_id, **kwargs):
+        if not kwargs:
+            return
+        body = {"replication": kwargs}
         return self._update('/replications/{replication_id}'
                             .format(replication_id=replication_id),
                             body, "replication")
