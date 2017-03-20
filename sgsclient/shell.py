@@ -33,8 +33,8 @@ from oslo_utils import encodeutils
 from oslo_utils import importutils
 
 import sgsclient
-from sgsclient import client as sgs_client, utils
-from sgsclient.common import utils
+from sgsclient import client as sgs_client
+from sgsclient import utils
 from sgsclient.openstack.common.apiclient import exceptions as exc
 
 logger = logging.getLogger(__name__)
