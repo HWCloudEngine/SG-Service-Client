@@ -380,10 +380,10 @@ def _construct_http_client(*args, **kwargs):
     endpoint = next(iter(args), None)
 
     if session:
-        service_type = kwargs.pop('service_type', None)
-        endpoint_type = kwargs.pop('endpoint_type', None)
+        service_type = kwargs.pop('service_type', 'sg-service')
+        endpoint_type = kwargs.pop('endpoint_type', 'publicURL')
         region_name = kwargs.pop('region_name', None)
-        service_name = kwargs.pop('service_name', None)
+        service_name = kwargs.pop('service_name', 'sgservice')
         parameters = {
             'endpoint_override': endpoint,
             'session': session,
