@@ -78,10 +78,11 @@ class VolumeManager(base.ManagerWithFind):
             volume_id=volume_id)
         return self._get(url, response_key="volume", headers=headers)
 
-    def enable(self, volume_id, name=None, description=None):
+    def enable(self, volume_id, name=None, description=None, metadata=None):
         info = {
             'name': name,
-            'description': description
+            'description': description,
+            'metadata': metadata
         }
         return self._action("enable", volume_id, info)
 

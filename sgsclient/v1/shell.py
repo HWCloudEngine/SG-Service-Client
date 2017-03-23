@@ -359,10 +359,29 @@ def do_create_volume(cs, args):
 @utils.arg('--description',
            metavar='<description>',
            help='The description of a replication.')
+@utils.arg('--metadata',
+           action='append',
+           metavar='key=val[,key=val,...]',
+           default=[],
+           help='Metadata info.')
 def do_enable_sg(cs, args):
     """Enable volume's SG."""
-    volume = cs.volumes.enable(args.volume_id)
+    metadata = _extract_driver_data(args)
+    volume = cs.volumes.enable(args.volume_id, args.name, args.description,
+                               metadata)
     utils.print_dict(volume.to_dict())
+
+
+def _extract_metadata(args):
+    if not args.metadata:
+        return {}
+
+    metadata = {}
+    for resource_params in args.metadata:
+        for param_kv in resource_params.split(','):
+            key, value = param_kv.split('=')
+            metadata[key] = value
+    return metadata
 
 
 @utils.arg('volume',
