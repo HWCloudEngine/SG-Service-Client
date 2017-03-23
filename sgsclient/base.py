@@ -121,6 +121,14 @@ class Manager(common_base.HookableMixin):
             return self.resource_class(self, body[response_key])
         return self.resource_class(self, body)
 
+    def _action(self, action, url, action_data=None, response_key=None):
+        data = {action: action_data}
+        resp, body = self.api.json_request('POST', url, data=data)
+
+        if (body is not None and
+                response_key is not None and isinstance(body, dict)):
+            return self.resource_class(self, body[response_key])
+
     def _build_list_url(self, resource_type, detailed=False,
                         search_opts=None, marker=None, limit=None,
                         sort_key=None, sort_dir=None, sort=None):

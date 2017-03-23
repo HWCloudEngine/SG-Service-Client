@@ -74,13 +74,12 @@ class CheckpointManager(base.ManagerWithFind):
         return self._get(url, response_key="checkpoint", headers=headers)
 
     def rollback(self, checkpoint_id):
-        url = "/checkpoints/{checkpoint_id}/rollback".format(
+        url = "/checkpoints/{checkpoint_id}/action".format(
             checkpoint_id=checkpoint_id)
-        body = None
-        return self._create(url, body, 'rollback')
+        return self._action('rollback', url, response_key='rollback')
 
     def reset_state(self, checkpoint_id, state):
-        body = {'status': state}
-        url = "/checkpoints/{checkpoint_id}/reset_status".format(
+        action_data = {'status': state}
+        url = "/checkpoints/{checkpoint_id}/action".format(
             checkpoint_id=checkpoint_id)
-        self.api.json_request('POST', url, data=body)
+        return self._action('reset_status', url, action_data)

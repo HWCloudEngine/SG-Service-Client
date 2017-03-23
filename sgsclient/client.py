@@ -24,7 +24,7 @@ import requests
 import six
 from six.moves import urllib
 
-from sgsclient.openstack.common.apiclient import exceptions as exc
+from sgsclient import exceptions as exc
 
 LOG = logging.getLogger(__name__)
 USER_AGENT = 'sgservice-client'
@@ -73,6 +73,7 @@ class HTTPClient(object):
         self.cert_file = kwargs.get('cert_file')
         self.key_file = kwargs.get('key_file')
         self.timeout = kwargs.get('timeout')
+        self._logger = logging.getLogger(__name__)
 
         self.ssl_connection_params = {
             'cacert': kwargs.get('cacert'),
@@ -204,6 +205,13 @@ class HTTPClient(object):
 
         self.log_http_response(resp)
 
+        body = None
+        if resp.text:
+            try:
+                body = jsonutils.loads(resp.text)
+            except ValueError as e:
+                self._logger.debug("load http response text error: %s", e)
+
         if 'X-Auth-Key' not in kwargs['headers'] and \
                 (resp.status_code == 401 or
                  (resp.status_code == 500 and "(HTTP 401)" in resp.content)):
@@ -211,7 +219,7 @@ class HTTPClient(object):
                                            " again.\n%s"
                                            % resp.content)
         elif 400 <= resp.status_code < 600:
-            raise exc.from_response(resp, method, url)
+            raise exc.from_response(resp, body)
         elif resp.status_code in (301, 302, 305):
             # Redirected. Reissue the request to the new location,
             # unless caller specified follow_redirects=False
@@ -220,7 +228,7 @@ class HTTPClient(object):
                 path = self.strip_endpoint(location)
                 resp = self._http_request(path, method, **kwargs)
         elif resp.status_code == 300:
-            raise exc.from_response(resp, method, url)
+            raise exc.from_response(resp, body)
 
         return resp
 
@@ -316,11 +324,18 @@ class SessionClient(keystone_adapter.Adapter):
                                                   raise_exc=False,
                                                   **kwargs)
 
+        body = None
+        if resp.text:
+            try:
+                body = jsonutils.loads(resp.text)
+            except ValueError as e:
+                pass
+
         if raise_exc and resp.status_code >= 400:
             LOG.trace("Error communicating with {url}: {exc}"
                       .format(url=url,
-                              exc=exc.from_response(resp, method, url)))
-            raise exc.from_response(resp, method, url)
+                              exc=exc.from_response(resp, body)))
+            raise exc.from_response(resp, body)
 
         return resp, resp.text
 
@@ -366,10 +381,11 @@ class SessionClient(keystone_adapter.Adapter):
                                                 **kwargs)
 
         if raise_exc and resp.status_code >= 400:
+            content = jsonutils.loads(resp.content)
             LOG.trace("Error communicating with {url}: {exc}"
                       .format(url=url,
-                              exc=exc.from_response(resp, method, url)))
-            raise exc.from_response(resp, method, url)
+                              exc=exc.from_response(resp, content)))
+            raise exc.from_response(resp, content)
 
         return resp
 
@@ -380,10 +396,10 @@ def _construct_http_client(*args, **kwargs):
     endpoint = next(iter(args), None)
 
     if session:
-        service_type = kwargs.pop('service_type', None)
-        endpoint_type = kwargs.pop('endpoint_type', None)
+        service_type = kwargs.pop('service_type', 'sg-service')
+        endpoint_type = kwargs.pop('endpoint_type', 'publicURL')
         region_name = kwargs.pop('region_name', None)
-        service_name = kwargs.pop('service_name', None)
+        service_name = kwargs.pop('service_name', 'sgservice')
         parameters = {
             'endpoint_override': endpoint,
             'session': session,

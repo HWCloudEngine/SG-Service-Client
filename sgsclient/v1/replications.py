@@ -76,28 +76,29 @@ class ReplicationManager(base.ManagerWithFind):
         return self._get(url, response_key="replication", headers=headers)
 
     def enable(self, replication_id):
-        return self._action("enable", replication_id)
-
-    def disable(self, replication_id):
-        return self._action("disable", replication_id)
-
-    def failover(self, replication_id):
-        return self._action("failover", replication_id)
-
-    def reverse(self, replication_id):
-        return self._action("reverse", replication_id)
-
-    def reset_state(self, replication_id, state):
-        info = {'status': state}
-        return self._action('reset_status', replication_id, info)
-
-    def _action(self, action, replication_id, info=None):
-        """Perform a replication "action."
-        """
-        data = {action: info}
         url = "/replications/{replication_id}/action".format(
             replication_id=replication_id)
-        resp, body = self.api.json_request('POST', url, data=data)
+        return self._action("enable", url, response_key='replication')
 
-        if body is not None and isinstance(body, dict):
-            return self.resource_class(self, body["replication"])
+    def disable(self, replication_id):
+        url = "/replications/{replication_id}/action".format(
+            replication_id=replication_id)
+        return self._action("disable", url, response_key='replication')
+
+    def failover(self, replication_id, force=False):
+        action_data = {'force': force}
+        url = "/replications/{replication_id}/action".format(
+            replication_id=replication_id)
+        return self._action("failover", url, action_data,
+                            response_key='replication')
+
+    def reverse(self, replication_id):
+        url = "/replications/{replication_id}/action".format(
+            replication_id=replication_id)
+        return self._action("reverse", url, response_key='replication')
+
+    def reset_state(self, replication_id, state):
+        action_data = {'status': state}
+        url = "/replications/{replication_id}/action".format(
+            replication_id=replication_id)
+        return self._action('reset_status', url, action_data, 'replication')

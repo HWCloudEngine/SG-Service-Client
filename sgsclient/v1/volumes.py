@@ -22,16 +22,17 @@ class VolumeManager(base.ManagerWithFind):
     resource_class = Volume
 
     def create(self, snapshot_id=None, checkpoint_id=None, volume_type=None,
-               availability_zone=None, name=None, description=None):
+               availability_zone=None, name=None, description=None,
+               volume_id=None):
         body = {'volume': {'name': name,
                            'snapshot_id': snapshot_id,
                            'checkpoint_id': checkpoint_id,
                            'description': description,
                            'volume_type': volume_type,
                            'availability_zone': availability_zone,
-                           }}
+                           'volume_id': volume_id}}
         url = "/volumes"
-        self.api.json_request('POST', url, data=body)
+        self._create(url, body, 'volume')
 
     def list(self, detailed=False, search_opts=None, marker=None, limit=None,
              sort_key=None, sort_dir=None, sort=None):
@@ -78,54 +79,59 @@ class VolumeManager(base.ManagerWithFind):
             volume_id=volume_id)
         return self._get(url, response_key="volume", headers=headers)
 
-    def enable(self, volume_id, name=None, description=None):
-        info = {
+    def enable(self, volume_id, name=None, description=None, metadata=None):
+        action_data = {
             'name': name,
-            'description': description
+            'description': description,
+            'metadata': metadata
         }
-        return self._action("enable", volume_id, info)
+        url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
+        return self._action("enable", url, action_data, 'volume')
 
     def disable(self, volume_id):
-        return self._action("disable", volume_id)
+        url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
+        return self._action("disable", url, response_key='volume')
 
     def reserve(self, volume_id):
-        return self._action("reserve", volume_id)
+        url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
+        return self._action("reserve", url)
 
     def unreserve(self, volume_id):
-        return self._action("unreserve", volume_id)
+        url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
+        return self._action("unreserve", url)
 
     def initialize_connection(self, volume_id):
-        return self._action("initialize_connection", volume_id,
+        url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
+        return self._action("initialize_connection", url,
                             response_key="connection_info")
 
     def attach(self, volume_id, instance_uuid, mountpoint, mode='rw',
                host_name=None):
-        info = {
+        action_data = {
             'instance_uuid': instance_uuid,
             'mountpoint': mountpoint,
             'mode': mode,
             'host_name': host_name
         }
-        return self._action("attach", volume_id, info=info)
+        url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
+        return self._action("attach", url, action_data)
 
     def begin_detaching(self, volume_id):
-        return self._action("begin_detaching", volume_id)
+        url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
+        return self._action("begin_detaching", url)
 
     def roll_detaching(self, volume_id):
-        return self._action("roll_detaching", volume_id)
+        url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
+        return self._action("roll_detaching", url)
 
     def detach(self, volume_id, attachment_uuid=None):
-        info = {
+        action_data = {
             "attachment_uuid": attachment_uuid
         }
-        return self._action("detach", volume_id, info=info)
-
-    def _action(self, action, volume_id, info=None, response_key="volume"):
-        """Perform a volume "action."
-        """
-        data = {action: info}
         url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
-        resp, body = self.api.json_request('POST', url, data=data)
+        return self._action("detach", url, action_data)
 
-        if body is not None and isinstance(body, dict):
-            return self.resource_class(self, body[response_key])
+    def reset_state(self, volume_id, state):
+        url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
+        action_data = {'status': state}
+        return self._action('reset_status', url, action_data)
