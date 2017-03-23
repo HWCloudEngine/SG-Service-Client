@@ -77,20 +77,21 @@ class BackupManager(base.ManagerWithFind):
         return self._get(url, response_key="backup", headers=headers)
 
     def restore(self, backup_id, volume_id):
-        url = "/backups/{backup_id}/restore".format(
-            backup_id=backup_id)
-        body = {"restore": {"volume_id": volume_id}}
-        return self._create(url, body, 'restore')
+        action_data = {"volume_id": volume_id}
+        url = "/backups/{backup_id}/action".format(backup_id=backup_id)
+        return self._action('restore', url, action_data,
+                            response_key='restore')
 
     def export_record(self, backup_id):
-        url = "/backups/{backup_id}/export_record".format(backup_id=backup_id)
-        return self._create(url, None, 'backup-record')
+        url = "/backups/{backup_id}/action".format(backup_id=backup_id)
+        return self._action('export_record', url, response_key='backup_record')
 
-    def import_record(self, backup_type, driver_data):
-        backup_record = {
-            'backup_type': backup_type,
-            'driver_data': driver_data
-        }
+    def import_record(self, backup_record):
+        data = {'backup_record': backup_record}
         url = "/backups/import_record"
-        body = {'backup-record': backup_record}
-        return self._create(url, data=body, response_key='backup')
+        return self._create(url, data, response_key='backup')
+
+    def reset_state(self, backup_id, state):
+        action_data = {'status': state}
+        url = "/backups/{backup_id}/action".format(backup_id=backup_id)
+        return self._action('reset_status', url, action_data)

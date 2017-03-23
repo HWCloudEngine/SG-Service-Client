@@ -75,7 +75,12 @@ class SnapshotManager(base.ManagerWithFind):
         return self._get(url, response_key="snapshot", headers=headers)
 
     def rollback(self, snapshot_id):
-        url = "/snapshots/{snapshot_id}/rollback".format(
+        url = "/snapshots/{snapshot_id}/action".format(
             snapshot_id=snapshot_id)
-        body = None
-        return self._create(url, body, 'rollback')
+        return self._action('rollback', url, response_key='rollback')
+
+    def reset_state(self, snapshot_id, state):
+        action_data = {'status': state}
+        url = "/snapshots/{snapshot_id}/action".format(
+            snapshot_id=snapshot_id)
+        return self._action('reset_status', url, action_data)

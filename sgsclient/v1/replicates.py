@@ -18,33 +18,37 @@ class ReplicateManager(base.Manager):
     resource_class = Volume
 
     def create(self, volume_id, mode, replication_id, peer_volume):
-        info = {'mode': mode,
-                'replication_id': replication_id,
-                'peer_volume': peer_volume}
-        return self._action("create_replicate", volume_id, info)
-
-    def delete(self, volume_id):
-        return self._action("delete_replicate", volume_id)
-
-    def enable(self, volume_id):
-        return self._action("enable_replicate", volume_id)
-
-    def disable(self, volume_id):
-        return self._action("disable_replicate", volume_id)
-
-    def failover(self, volume_id):
-        return self._action("failover_replicate", volume_id)
-
-    def reverse(self, volume_id):
-        return self._action("reverse_replicate", volume_id)
-
-    def _action(self, action, volume_id, info=None):
-        """Perform a replicate "action."
-        """
-        data = {action: info}
+        action_data = {'mode': mode,
+                       'replication_id': replication_id,
+                       'peer_volume': peer_volume}
         url = "/volume_replicate/{volume_id}/action".format(
             volume_id=volume_id)
-        resp, body = self.api.json_request('POST', url, data=data)
+        return self._action("create_replicate", url, action_data, 'replicate')
 
-        if body is not None:
-            return self.resource_class(self, body["volume"])
+    def delete(self, volume_id):
+        url = "/volume_replicate/{volume_id}/action".format(
+            volume_id=volume_id)
+        return self._action("delete_replicate", url)
+
+    def enable(self, volume_id):
+        url = "/volume_replicate/{volume_id}/action".format(
+            volume_id=volume_id)
+        return self._action("enable_replicate", url, response_key='replicate')
+
+    def disable(self, volume_id):
+        url = "/volume_replicate/{volume_id}/action".format(
+            volume_id=volume_id)
+        return self._action("disable_replicate", url, response_key='replicate')
+
+    def failover(self, volume_id, checkpoint_id=None, force=False):
+        action_data = {'checkpoint_id': checkpoint_id,
+                       'force': force}
+        url = "/volume_replicate/{volume_id}/action".format(
+            volume_id=volume_id)
+        return self._action("failover_replicate", url, action_data,
+                            'replicate')
+
+    def reverse(self, volume_id):
+        url = "/volume_replicate/{volume_id}/action".format(
+            volume_id=volume_id)
+        return self._action("reverse_replicate", url, response_key='replicate')

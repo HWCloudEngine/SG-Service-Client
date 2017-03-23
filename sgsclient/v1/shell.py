@@ -42,54 +42,62 @@ def do_replication_create(cs, args):
     utils.print_dict(replication.to_dict())
 
 
-@utils.arg('replication_id',
-           metavar='<replication-id>',
-           help='ID of replication.')
+@utils.arg('replication',
+           metavar='<replication>',
+           help='ID or name of replication.')
 def do_replication_enable(cs, args):
     """Enable a replication."""
-    replication = cs.replications.enable(args.replication_id)
+    replication = shell_utils.find_replication(cs, args.replication)
+    replication = cs.replications.enable(replication.id)
     utils.print_dict(replication.to_dict())
 
 
-@utils.arg('replication_id',
-           metavar='<replication-id>',
-           help='ID of replication.')
+@utils.arg('replication',
+           metavar='<replication>',
+           help='ID or name of replication.')
 def do_replication_disable(cs, args):
     """Disable a replication."""
-    replication = cs.replications.disable(args.replication_id)
+    replication = shell_utils.find_replication(cs, args.replication)
+    replication = cs.replications.disable(replication.id)
     utils.print_dict(replication.to_dict())
 
 
-@utils.arg('replication_id',
-           metavar='<replication-id>',
-           help='ID of replication.')
+@utils.arg('replication',
+           metavar='<replication>',
+           help='ID or name of replication.')
+@utils.arg('--force',
+           action='store_true',
+           default=False,
+           help='Force to failover replication')
 def do_replication_failover(cs, args):
     """Failover a replication."""
-    replication = cs.replications.failover(args.replication_id)
+    replication = shell_utils.find_replication(cs, args.replication)
+    replication = cs.replications.failover(replication.id, args.force)
     utils.print_dict(replication.to_dict())
 
 
-@utils.arg('replication_id',
-           metavar='<replication-id>',
-           help='ID of replication.')
+@utils.arg('replication',
+           metavar='<replication>',
+           help='ID or name of replication.')
 def do_replication_reverse(cs, args):
     """Reverse a replication."""
-    replication = cs.replications.reverse(args.replication_id)
+    replication = shell_utils.find_replication(cs, args.replication)
+    replication = cs.replications.reverse(replication.id)
     utils.print_dict(replication.to_dict())
 
 
-@utils.arg('replication_id',
-           metavar='<replication-id>',
-           help='ID of replication.')
+@utils.arg('replication',
+           metavar='<replication>',
+           help='ID or name of replication.')
 def do_replication_delete(cs, args):
     """Delete a replication."""
-    replication = args.replication_id
+    replication = shell_utils.find_replication(cs, args.replication)
     try:
-        cs.replications.delete(replication)
+        cs.replications.delete(replication.id)
         print("Request to delete replication %s has been accepted." % (
-            replication))
+            replication.id))
     except Exception as e:
-        print("Delete for replication %s failed: %s" % (replication, e))
+        print("Delete for replication %s failed: %s" % (replication.id, e))
 
 
 @utils.arg('replication',
@@ -308,7 +316,7 @@ def do_list(cs, args):
     volumes = cs.volumes.list(search_opts=search_opts, marker=args.marker,
                               limit=args.limit, sort_key=args.sort_key,
                               sort_dir=args.sort_dir, sort=args.sort)
-    columns = ['Id', 'Name', 'Status', 'Replicate Status']
+    columns = ['Id', 'Name', 'Status', 'Replicate Status', 'Replicate Mode']
 
     if args.sort_key or args.sort_dir or args.sort:
         sortby_index = None
@@ -330,21 +338,25 @@ def do_list(cs, args):
 @utils.arg('--description',
            metavar='<description>',
            help='The description of volume.')
-@utils.arg('--volume_type',
+@utils.arg('--volume-type',
            metavar='<volume-type>',
            help='Volume type.')
-@utils.arg('--availability_zone',
+@utils.arg('--availability-zone',
            metavar='<availability-zone>',
            help='availability zone')
+@utils.arg('--volume-id',
+           metavar='<volume-id>',
+           help='The new available cinder volume')
 def do_create_volume(cs, args):
-    """Create a volume."""
+    """Create a volume from snapshot, or copy snapshot to a volume."""
     try:
         cs.volumes.create(checkpoint_id=args.checkpoint_id,
                           snapshot_id=args.snapshot_id,
                           name=args.name,
                           description=args.description,
                           volume_type=args.volume_type,
-                          availability_zone=args.availability_zone)
+                          availability_zone=args.availability_zone,
+                          volume_id=args.volume_id)
         print("Request to create volume has been accepted.")
     except Exception as e:
         print("Create volume request failed: %s" % e)
@@ -359,10 +371,29 @@ def do_create_volume(cs, args):
 @utils.arg('--description',
            metavar='<description>',
            help='The description of a replication.')
+@utils.arg('--metadata',
+           action='append',
+           metavar='key=val[,key=val,...]',
+           default=[],
+           help='Metadata info.')
 def do_enable_sg(cs, args):
     """Enable volume's SG."""
-    volume = cs.volumes.enable(args.volume_id)
+    metadata = _extract_metadata(args)
+    volume = cs.volumes.enable(args.volume_id, args.name, args.description,
+                               metadata)
     utils.print_dict(volume.to_dict())
+
+
+def _extract_metadata(args):
+    if not args.metadata:
+        return {}
+
+    metadata = {}
+    for resource_params in args.metadata:
+        for param_kv in resource_params.split(','):
+            key, value = param_kv.split('=')
+            metadata[key] = value
+    return metadata
 
 
 @utils.arg('volume',
@@ -402,19 +433,15 @@ def do_update(cs, args):
     utils.print_dict(volume.to_dict())
 
 
-# TODO(luobin): remove these following volume-actions from shell
 @utils.arg('volume',
            metavar='<volume>',
            help='ID or name of volume.')
-@utils.arg('--instance_uuid',
-           metavar='<instance-id>',
+@utils.arg('instance_uuid',
+           metavar='<instance-uuid>',
            help='ID of instance.')
-@utils.arg('--host_name',
-           metavar='<host-name>',
-           help='The name of host.')
-@utils.arg('--mountpoint',
-           metavar='<mountpoint>',
-           help='The mountpoint.')
+@utils.arg('instance_ip',
+           metavar='<instance-ip>',
+           help='The ip of instance')
 @utils.arg('--mode',
            metavar='<mode>',
            help='The attach mode.')
@@ -427,8 +454,8 @@ def do_attach(cs, args):
         return
     volume = shell_utils.find_volume(cs, args.volume)
     try:
-        cs.volumes.attach(volume.id, args.instance_uuid, args.mountpoint,
-                          args.mode, args.host_name)
+        cs.volumes.attach(volume.id, args.instance_uuid, args.instace_ip,
+                          mode)
         print ("Request to attach volume %s has been accepted." % (
             volume.id))
     except Exception as e:
@@ -439,50 +466,14 @@ def do_attach(cs, args):
 @utils.arg('volume',
            metavar='<volume>',
            help='ID or name of volume.')
-def do_reserve(cs, args):
-    """Mark SG-volume as reserved before attach."""
-    volume = shell_utils.find_volume(cs, args.volume)
-    try:
-        cs.volumes.reserve(volume.id)
-        print ("Request to reserve volume %s has been accepted." % (
-            volume.id))
-    except Exception as e:
-        print ("Request to reserve volume %s failed: %s." % (
-            volume.id, e))
-
-
-@utils.arg('volume',
-           metavar='<volume>',
-           help='ID or name of volume.')
-def do_unreserve(cs, args):
-    """Unmark SG-volume as reserved before attach."""
-    volume = shell_utils.find_volume(cs, args.volume)
-    try:
-        cs.volumes.unreserve(volume.id)
-        print ("Request to unreserve volume %s has been accepted." % (
-            volume.id))
-    except Exception as e:
-        print ("Request to unreserve volume %s failed: %s." % (volume.id, e))
-
-
-@utils.arg('volume',
-           metavar='<volume>',
-           help='ID or name of volume.')
-def do_initialize_connection(cs, args):
-    """Initialize volume attachment."""
-    volume = shell_utils.find_volume(cs, args.volume)
-    connection_info = cs.volumes.initialize_connection(volume.id)
-    utils.print_dict(connection_info.to_dict())
-
-
-@utils.arg('volume',
-           metavar='<volume>',
-           help='ID or name of volume.')
+@utils.arg('instance_uuid',
+           metavar='<instance-uuid>',
+           help='ID of instance.')
 def do_detach(cs, args):
     """Clear attachment metadata."""
     volume = shell_utils.find_volume(cs, args.volume)
     try:
-        cs.volumes.detach(volume.id)
+        cs.volumes.detach(volume.id, args.instance_uuid)
         print ("Request to detach volume %s has been accepted." % (
             volume.id))
     except Exception as e:
@@ -493,118 +484,46 @@ def do_detach(cs, args):
 @utils.arg('volume',
            metavar='<volume>',
            help='ID or name of volume.')
-def do_begin_detaching(cs, args):
-    """Update volume status to 'detaching'."""
+def do_delete(cs, args):
+    """Delete error or available sg volume."""
     volume = shell_utils.find_volume(cs, args.volume)
     try:
-        cs.volumes.begin_detaching(volume.id)
-        print ("Request to begin_detaching %s has been accepted." % (
+        cs.volumes.delete(volume.id)
+        print ("Request to delete volume %s has been accepted." % (
             volume.id))
     except Exception as e:
-        print ("Request to begin_detaching %s failed: %s." % (
+        print ("Request to delete volume %s failed: %s." % (
             volume.id, e))
 
 
-@utils.arg('volume',
-           metavar='<volume>',
-           help='ID or name of volume.')
-def do_roll_detaching(cs, args):
-    """Roll back volume status to 'in-use'."""
+@utils.arg('volume', metavar='<volume>',
+           help='ID or name of the volume to modify.')
+@utils.arg('--state', metavar='<state>',
+           default='available',
+           help='The state to assign to the volume.')
+def do_reset_state(cs, args):
     volume = shell_utils.find_volume(cs, args.volume)
     try:
-        cs.volumes.roll_detaching(volume.id)
-        print ("Request to roll_detaching volume %s has been accepted." % (
+        cs.volumes.reset_state(volume.id, args.state)
+        print("Request to reset-state volume %s has been accepted." % (
             volume.id))
     except Exception as e:
-        print ("Request to roll_detaching volume %s failed: %s." % (
-            volume.id, e))
-
+        print("Reset-state for volume %s failed: %s" % (volume.id, e))
 
 ###################
 
-# TODO(luobin): remove replicate-actions from shell
+
 @utils.arg('volume',
            metavar='<volume>',
            help='ID or name of volume.')
-@utils.arg('peer_volume',
-           metavar='<peer-volume>',
-           help='ID of peer-volume.')
-@utils.arg('replication_id',
-           metavar='<replication-id>',
-           help='ID of replication.')
-@utils.arg('--mode',
-           metavar='<mode>',
-           default='master',
-           help='ID of volume.')
-def do_replicate_create(cs, args):
-    """Create volume's replicate."""
-    mode = args.mode
-    mode = 'master' if mode is None else mode
-    if mode not in ['master', 'slave']:
-        print("Replicate mode must be master or slave")
-        return
+def do_replicate_force_failover(cs, args):
+    """Force failover volume's replicate."""
     volume = shell_utils.find_volume(cs, args.volume)
-    volume = cs.replicates.create(volume_id=volume.id, mode=mode,
-                                  replication_id=args.replication_id,
-                                  peer_volume=args.peer_volume)
+    volume = cs.replicates.failover(volume.id, force=True)
     utils.print_dict(volume.to_dict())
-
-
-@utils.arg('volume',
-           metavar='<volume>',
-           help='ID or name of volume.')
-def do_replicate_enable(cs, args):
-    """Enable volume's replicate."""
-    volume = shell_utils.find_volume(cs, args.volume)
-    volume = cs.replicates.enable(volume.id)
-    utils.print_dict(volume.to_dict())
-
-
-@utils.arg('volume',
-           metavar='<volume>',
-           help='ID or name of volume.')
-def do_replicate_disable(cs, args):
-    """Disable volume's replicate."""
-    volume = shell_utils.find_volume(cs, args.volume)
-    volume = cs.replicates.disable(volume.id)
-    utils.print_dict(volume.to_dict())
-
-
-@utils.arg('volume',
-           metavar='<volume>',
-           help='ID or name of volume.')
-def do_replicate_delete(cs, args):
-    """Delete volume's replicate."""
-    volume = shell_utils.find_volume(cs, args.volume)
-    try:
-        cs.replicates.delete(volume.id)
-        print("Request to delete volume %s replicate has been accepted." % (
-            volume))
-    except Exception as e:
-        print("Delete for volume %s replicate failed: %s" % (volume, e))
-
-
-@utils.arg('volume',
-           metavar='<volume>',
-           help='ID or name of volume.')
-def do_replicate_failover(cs, args):
-    """Failover volume's replicate."""
-    volume = shell_utils.find_volume(cs, args.volume)
-    volume = cs.replicates.failover(volume.id)
-    utils.print_dict(volume.to_dict())
-
-
-@utils.arg('volume',
-           metavar='<volume>',
-           help='ID or name of volume.')
-def do_replicate_reverse(cs, args):
-    """Reverse volume's replicate."""
-    volume = shell_utils.find_volume(cs, args.volume)
-    volume = cs.replicates.reverse(volume.id)
-    utils.print_dict(volume.to_dict())
-
 
 #######################
+
 
 @utils.arg('volume',
            metavar='<volume>',
@@ -766,6 +685,21 @@ def do_snapshot_update(cs, args):
     snapshot = shell_utils.find_snapshot(cs, args.snapshot)
     snapshot = cs.snapshots.update(snapshot.id, kwargs)
     utils.print_dict(snapshot.to_dict())
+
+
+@utils.arg('snapshot', metavar='<snapshot>',
+           help='ID or name of the snapshot to modify.')
+@utils.arg('--state', metavar='<state>',
+           default='available',
+           help='The state to assign to the snapshot.')
+def do_snapshot_reset_state(cs, args):
+    snapshot = shell_utils.find_snapshot(cs, args.snapshot)
+    try:
+        cs.snapshots.reset_state(snapshot.id, args.state)
+        print("Request to reset-state snapshot %s has been accepted." % (
+            snapshot.id))
+    except Exception as e:
+        print("Reset-state for snapshot %s failed: %s" % (snapshot.id, e))
 
 
 ####################
@@ -939,6 +873,9 @@ def do_backup_export(cs, args):
 @utils.arg('backup_type',
            metavar='<backup_type>',
            help='Type of backup, full or incremental.')
+@utils.arg('availability_zone',
+           metavar='<availability_zone>',
+           help='Availability zone of backup.')
 @utils.arg('--driver-data-json',
            type=str,
            dest='driver_data_json',
@@ -952,7 +889,12 @@ def do_backup_export(cs, args):
 def do_backup_import(cs, args):
     """Import a backup from record"""
     driver_data = _extract_driver_data(args)
-    backup = cs.backups.export_record(args.backup_type, driver_data)
+    backup_record = {
+        'availability_zone': args.availability_zone,
+        'backup_type': args.backup_type,
+        'driver_data': driver_data
+    }
+    backup = cs.backups.import_record(backup_record)
     utils.print_dict(backup.to_dict())
 
 
@@ -999,6 +941,21 @@ def do_backup_update(cs, args):
     backup = shell_utils.find_backup(cs, args.backup)
     backup = cs.backups.update(backup.id, kwargs)
     utils.print_dict(backup.to_dict())
+
+
+@utils.arg('backup', metavar='<backup>',
+           help='ID or name of the backup to modify.')
+@utils.arg('--state', metavar='<state>',
+           default='available',
+           help='The state to assign to the backup.')
+def do_backup_reset_state(cs, args):
+    backup = shell_utils.find_backup(cs, args.backup)
+    try:
+        cs.backups.reset_state(backup.id, args.state)
+        print("Request to reset-state backup %s has been accepted." % (
+            backup.id))
+    except Exception as e:
+        print("Reset-state for backup %s failed: %s" % (backup.id, e))
 
 
 #############################

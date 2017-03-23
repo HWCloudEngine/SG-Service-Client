@@ -443,7 +443,7 @@ def main(args=sys.argv[1:]):
     try:
         SGServiceShell().main(args)
     except KeyboardInterrupt:
-        print("... terminating cinder client", file=sys.stderr)
+        print("... terminating sgs client", file=sys.stderr)
         sys.exit(130)
     except Exception as e:
         logger.debug(e, exc_info=1)
