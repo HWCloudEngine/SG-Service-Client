@@ -100,7 +100,7 @@ class VolumeManager(base.ManagerWithFind):
             'mode': mode
         }
         url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
-        return self._action("attach", url, action_data)
+        return self._action("attach", url, action_data, response_key='attach')
 
     def detach(self, volume_id, instance_uuid):
         action_data = {

@@ -344,11 +344,16 @@ def do_list(cs, args):
 @utils.arg('--availability-zone',
            metavar='<availability-zone>',
            help='availability zone')
+@utils.arg('--size',
+           metavar='<size>',
+           help='size')
 @utils.arg('--volume-id',
            metavar='<volume-id>',
            help='The new available cinder volume')
 def do_create_volume(cs, args):
     """Create a volume from snapshot, or copy snapshot to a volume."""
+    if [args.checkpoint_id, args.snapshot_id] == [None, None]:
+        print ("create volume must specify a checkpoint or snapshot")
     try:
         cs.volumes.create(checkpoint_id=args.checkpoint_id,
                           snapshot_id=args.snapshot_id,
@@ -356,6 +361,7 @@ def do_create_volume(cs, args):
                           description=args.description,
                           volume_type=args.volume_type,
                           availability_zone=args.availability_zone,
+                          size=args.size,
                           volume_id=args.volume_id)
         print("Request to create volume has been accepted.")
     except Exception as e:
@@ -453,14 +459,9 @@ def do_attach(cs, args):
         print("Attach mode must be rw or ro")
         return
     volume = shell_utils.find_volume(cs, args.volume)
-    try:
-        cs.volumes.attach(volume.id, args.instance_uuid, args.instace_ip,
-                          mode)
-        print ("Request to attach volume %s has been accepted." % (
-            volume.id))
-    except Exception as e:
-        print ("Request to attach volume %s failed: %s." % (
-            volume.id, e))
+    attach = cs.volumes.attach(volume.id, args.instance_uuid,
+                               args.instance_ip, mode)
+    utils.print_dict(attach.to_dict())
 
 
 @utils.arg('volume',
@@ -876,6 +877,9 @@ def do_backup_export(cs, args):
 @utils.arg('availability_zone',
            metavar='<availability_zone>',
            help='Availability zone of backup.')
+@utils.arg('backup_size',
+           metavar='<backup_size>',
+           help='Size of backup.')
 @utils.arg('--driver-data-json',
            type=str,
            dest='driver_data_json',
@@ -892,6 +896,7 @@ def do_backup_import(cs, args):
     backup_record = {
         'availability_zone': args.availability_zone,
         'backup_type': args.backup_type,
+        'backup_size': args.backup_size,
         'driver_data': driver_data
     }
     backup = cs.backups.import_record(backup_record)
