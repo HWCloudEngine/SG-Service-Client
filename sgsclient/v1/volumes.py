@@ -33,7 +33,7 @@ class VolumeManager(base.ManagerWithFind):
                            'volume_id': volume_id,
                            'size': size}}
         url = "/volumes"
-        self._create(url, body, 'volume')
+        return self._create(url, body, 'volume')
 
     def list(self, detailed=False, search_opts=None, marker=None, limit=None,
              sort_key=None, sort_dir=None, sort=None):
@@ -100,7 +100,7 @@ class VolumeManager(base.ManagerWithFind):
             'mode': mode
         }
         url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
-        return self._action("attach", url, action_data)
+        return self._action("attach", url, action_data, response_key='attach')
 
     def detach(self, volume_id, instance_uuid):
         action_data = {

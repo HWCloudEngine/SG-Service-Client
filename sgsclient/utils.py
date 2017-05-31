@@ -23,6 +23,7 @@ from oslo_utils import encodeutils
 import prettytable
 
 from sgsclient.openstack.common.apiclient import exceptions
+from sgsclient._i18n import _
 
 
 # Decorator for cli-args
@@ -148,4 +149,10 @@ def find_resource(manager, name_or_id, *args, **kwargs):
     except exceptions.NotFound:
         msg = "No %s with a name or ID of '%s' exists." % \
               (manager.resource_class.__name__.lower(), name_or_id)
+        raise exceptions.CommandError(msg)
+    except exceptions.NoUniqueMatch:
+        msg = (_("Multiple %(class)s matches found for '%(name)s', use an ID "
+                 "to be more specific.") %
+               {'class': manager.resource_class.__name__.lower(),
+                'name': name_or_id})
         raise exceptions.CommandError(msg)
