@@ -19,23 +19,22 @@ from __future__ import print_function
 import argparse
 import sys
 
-import six
-import six.moves.urllib.parse as urlparse
+from keystoneclient.auth.identity.generic import password
+from keystoneclient.auth.identity.generic import token
+from keystoneclient.auth.identity import v3 as identity
 from keystoneclient import discover
 from keystoneclient import exceptions as ks_exc
 from keystoneclient import session as ksession
-from keystoneclient.auth.identity import v3 as identity
-from keystoneclient.auth.identity.generic import password
-from keystoneclient.auth.identity.generic import token
 from oslo_log import handlers
 from oslo_log import log as logging
-from oslo_utils import encodeutils
 from oslo_utils import importutils
+import six
+import six.moves.urllib.parse as urlparse
 
 import sgsclient
 from sgsclient import client as sgs_client
-from sgsclient import utils
 from sgsclient.openstack.common.apiclient import exceptions as exc
+from sgsclient import utils
 
 logger = logging.getLogger(__name__)
 

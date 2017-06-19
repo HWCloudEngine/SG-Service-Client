@@ -21,7 +21,8 @@ class Snapshot(base.Resource):
 class SnapshotManager(base.ManagerWithFind):
     resource_class = Snapshot
 
-    def create(self, volume_id, name=None, description=None, checkpoint_id=None):
+    def create(self, volume_id, name=None, description=None,
+               checkpoint_id=None):
         body = {'snapshot': {"volume_id": volume_id,
                              "name": name,
                              "description": description,

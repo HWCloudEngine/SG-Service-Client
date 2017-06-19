@@ -13,17 +13,15 @@
 from __future__ import print_function
 
 import os
-import sys
-
+import prettytable
 import six
+import sys
 import uuid
 
 from oslo_utils import encodeutils
 
-import prettytable
-
-from sgsclient.openstack.common.apiclient import exceptions
 from sgsclient._i18n import _
+from sgsclient.openstack.common.apiclient import exceptions
 
 
 # Decorator for cli-args

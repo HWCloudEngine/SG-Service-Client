@@ -328,7 +328,7 @@ class SessionClient(keystone_adapter.Adapter):
         if resp.text:
             try:
                 body = jsonutils.loads(resp.text)
-            except ValueError as e:
+            except ValueError:
                 pass
 
         if raise_exc and resp.status_code >= 400:

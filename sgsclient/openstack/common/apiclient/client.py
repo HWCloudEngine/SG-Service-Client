@@ -36,9 +36,9 @@ except ImportError:
 import hashlib
 import requests
 
-from sgsclient.openstack.common.apiclient import exceptions
 from oslo_utils import encodeutils
 from oslo_utils import importutils
+from sgsclient.openstack.common.apiclient import exceptions
 
 
 _logger = logging.getLogger(__name__)

@@ -47,8 +47,8 @@ class ReplicationsTest(base.TestCaseShell):
     @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_create_replication(self, mock_request):
         mock_request.return_value = mock_request_return
-        cs.replications.create('replication name', 'master_volume',
-                               'slave_volume', 'description')
+        cs.replications.create('master_volume', 'slave_volume',
+                               'replication name', 'description')
         mock_request.assert_called_with(
             'POST',
             '/replications',
@@ -60,7 +60,7 @@ class ReplicationsTest(base.TestCaseShell):
                     'description': 'description'}},
             headers={})
 
-    @mock.patch('sgsclient.client.HTTPClient.json_request')
+    @mock.patch('sgsclient.client.HTTPClient.raw_request')
     def test_delete_replication(self, mock_request):
         mock_request.return_value = mock_request_return
         cs.replications.delete('1')
@@ -72,7 +72,7 @@ class ReplicationsTest(base.TestCaseShell):
     @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_create_update(self, mock_request):
         mock_request.return_value = mock_request_return
-        cs.replications.update('1', {'name': 'Test name.'})
+        cs.replications.update('1', name='Test name.')
         mock_request.assert_called_with(
             'PUT',
             '/replications/1',
@@ -103,9 +103,8 @@ class ReplicationsTest(base.TestCaseShell):
         cs.replications.enable(replication_id)
         mock_request.assert_called_with(
             'POST',
-            '/replications/1/enable',
-            data={"replication": {"replication_id": "1"}},
-            headers={})
+            '/replications/1/action',
+            data={"enable": None})
 
     @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_disable_replication(self, mock_request):
@@ -114,9 +113,8 @@ class ReplicationsTest(base.TestCaseShell):
         cs.replications.disable(replication_id)
         mock_request.assert_called_with(
             'POST',
-            '/replications/1/disable',
-            data={"replication": {"replication_id": "1"}},
-            headers={})
+            '/replications/1/action',
+            data={"disable": None})
 
     @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_failover_replication(self, mock_request):
@@ -125,9 +123,8 @@ class ReplicationsTest(base.TestCaseShell):
         cs.replications.failover(replication_id)
         mock_request.assert_called_with(
             'POST',
-            '/replications/1/failover',
-            data={"replication": {"replication_id": "1"}},
-            headers={})
+            '/replications/1/action',
+            data={"failover": {'force': False}})
 
     @mock.patch('sgsclient.client.HTTPClient.json_request')
     def test_reverse_replication(self, mock_request):
@@ -136,6 +133,5 @@ class ReplicationsTest(base.TestCaseShell):
         cs.replications.reverse(replication_id)
         mock_request.assert_called_with(
             'POST',
-            '/replications/1/reverse',
-            data={"replication": {"replication_id": "1"}},
-            headers={})
+            '/replications/1/action',
+            data={"reverse": None})

@@ -74,6 +74,7 @@ class NoUniqueMatch(Exception):
 
 class AuthSystemNotFound(Exception):
     """When the user specifies an AuthSystem but not installed."""
+
     def __init__(self, auth_system):
         self.auth_system = auth_system
 
@@ -98,8 +99,21 @@ class ConnectionError(Exception):
     pass
 
 
+class ConnectionRefused(Exception):
+    """
+    Connection refused: the server refused the connection.
+    """
+
+    def __init__(self, response=None):
+        self.response = response
+
+    def __str__(self):
+        return "ConnectionRefused: %s" % repr(self.response)
+
+
 class AmbiguousEndpoints(Exception):
     """Found more than one matching endpoint in Service Catalog."""
+
     def __init__(self, endpoints=None):
         self.endpoints = endpoints
 
@@ -111,6 +125,7 @@ class ClientException(Exception):
     """
     The base exception class for all exceptions this library raises.
     """
+
     def __init__(self, code, message=None, details=None,
                  request_id=None, response=None):
         self.code = code
@@ -129,6 +144,11 @@ class ClientException(Exception):
             formatted_string += " (Request-ID: %s)" % self.request_id
 
         return formatted_string
+
+
+class EndpointException(ClientException):
+    """Something is rotten in Service Catalog."""
+    pass
 
 
 class BadRequest(ClientException):
