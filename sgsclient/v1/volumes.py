@@ -93,10 +93,9 @@ class VolumeManager(base.ManagerWithFind):
         url = "/volumes/{volume_id}/action".format(volume_id=volume_id)
         return self._action("disable", url, response_key='volume')
 
-    def attach(self, volume_id, instance_uuid, instance_ip, mode='rw'):
+    def attach(self, volume_id, instance_uuid, mode='rw'):
         action_data = {
             'instance_uuid': instance_uuid,
-            'instance_ip': instance_ip,
             'mode': mode
         }
         url = "/volumes/{volume_id}/action".format(volume_id=volume_id)

@@ -443,9 +443,6 @@ def do_update(cs, args):
 @utils.arg('instance_uuid',
            metavar='<instance-uuid>',
            help='ID of instance.')
-@utils.arg('instance_ip',
-           metavar='<instance-ip>',
-           help='The ip of instance')
 @utils.arg('--mode',
            metavar='<mode>',
            help='The attach mode.')
@@ -457,8 +454,7 @@ def do_attach(cs, args):
         print("Attach mode must be rw or ro")
         return
     volume = shell_utils.find_volume(cs, args.volume)
-    attach = cs.volumes.attach(volume.id, args.instance_uuid,
-                               args.instance_ip, mode)
+    attach = cs.volumes.attach(volume.id, args.instance_uuid, mode)
     utils.print_dict(attach.to_dict())
 
 
