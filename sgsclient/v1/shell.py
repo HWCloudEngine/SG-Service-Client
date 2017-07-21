@@ -87,17 +87,22 @@ def do_replication_reverse(cs, args):
 
 
 @utils.arg('replication',
-           metavar='<replication>',
+           metavar='<replication>', nargs='+',
            help='ID or name of replication.')
 def do_replication_delete(cs, args):
     """Delete a replication."""
-    replication = shell_utils.find_replication(cs, args.replication)
-    try:
-        cs.replications.delete(replication.id)
-        print("Request to delete replication %s has been accepted." % (
-            replication.id))
-    except Exception as e:
-        print("Delete for replication %s failed: %s" % (replication.id, e))
+    failure_count = 0
+    for item in args.replication:
+        try:
+            replication = shell_utils.find_replication(cs, item)
+            cs.replications.delete(replication.id)
+            print("Request to delete replication %s has been accepted." % item)
+        except Exception as e:
+            failure_count += 1
+            print("Delete for replication %s failed: %s" % (item, e))
+    if failure_count == len(args.replication):
+        raise exceptions.CommandError("Unable to delete any of the specified "
+                                      "replications.")
 
 
 @utils.arg('replication',
@@ -477,18 +482,22 @@ def do_detach(cs, args):
 
 
 @utils.arg('volume',
-           metavar='<volume>',
-           help='ID or name of volume.')
+           metavar='<volume>', nargs='+',
+           help='ID or name of volume or volumes to delete.')
 def do_delete(cs, args):
     """Delete error or available sg volume."""
-    volume = shell_utils.find_volume(cs, args.volume)
-    try:
-        cs.volumes.delete(volume.id)
-        print ("Request to delete volume %s has been accepted." % (
-            volume.id))
-    except Exception as e:
-        print ("Request to delete volume %s failed: %s." % (
-            volume.id, e))
+    failure_count = 0
+    for item in args.volume:
+        try:
+            volume = shell_utils.find_volume(cs, item)
+            cs.volumes.delete(volume.id)
+            print ("Request to delete volume %s has been accepted." % item)
+        except Exception as e:
+            failure_count += 1
+            print ("Request to delete volume %s failed: %s." % (item, e))
+    if failure_count == len(args.volume):
+        raise exceptions.CommandError("Unable to delete any of the specified "
+                                      "volumes.")
 
 
 @utils.arg('volume', metavar='<volume>',
@@ -537,17 +546,22 @@ def do_snapshot_create(cs, args):
 
 
 @utils.arg('snapshot',
-           metavar='<snapshot>',
-           help='ID or name of snapshot.')
+           metavar='<snapshot>', nargs='+',
+           help='ID or name of snapshot or snapshots to delete.')
 def do_snapshot_delete(cs, args):
     """Delete snapshot."""
-    snapshot = shell_utils.find_snapshot(cs, args.snapshot)
-    try:
-        cs.snapshots.delete(snapshot.id)
-        print("Request to delete snapshot %s has been accepted." % (
-            snapshot.id))
-    except Exception as e:
-        print("Delete for snapshot %s failed: %s" % (snapshot.id, e))
+    failure_count = 0
+    for item in args.snapshot:
+        try:
+            snapshot = shell_utils.find_snapshot(cs, item)
+            cs.snapshots.delete(snapshot.id)
+            print("Request to delete snapshot %s has been accepted." % item)
+        except Exception as e:
+            failure_count += 1
+            print("Delete for snapshot %s failed: %s" % (item, e))
+    if failure_count == len(args.snapshot):
+        raise exceptions.CommandError("Unable to delete any of the specified "
+                                      "snapshots.")
 
 
 @utils.arg('snapshot',
@@ -734,17 +748,21 @@ def do_backup_create(cs, args):
 
 
 @utils.arg('backup',
-           metavar='<backup>',
+           metavar='<backup>', nargs='+',
            help='ID or name of backup.')
 def do_backup_delete(cs, args):
     """Delete snapshot."""
-    backup = shell_utils.find_backup(cs, args.backup)
-    try:
-        cs.backups.delete(backup.id)
-        print("Request to delete backup %s has been accepted." % (
-            backup.id))
-    except Exception as e:
-        print("Delete for backup %s failed: %s" % (backup.id, e))
+    failure_count = 0
+    for item in args.backup:
+        try:
+            backup = shell_utils.find_backup(cs, item)
+            cs.backups.delete(backup.id)
+            print("Request to delete backup %s has been accepted." % item)
+        except Exception as e:
+            print("Delete for backup %s failed: %s" % (item, e))
+    if failure_count == len(args.backup):
+        raise exceptions.CommandError("Unable to delete any of the specified "
+                                      "backups.")
 
 
 @utils.arg('backup',
@@ -976,17 +994,21 @@ def do_checkpoint_create(cs, args):
 
 
 @utils.arg('checkpoint',
-           metavar='<checkpoint>',
+           metavar='<checkpoint>', nargs='+',
            help='ID or name of checkpoint.')
 def do_checkpoint_delete(cs, args):
     """Delete checkpoint."""
-    checkpoint = shell_utils.find_checkpoint(cs, args.checkpoint)
-    try:
-        cs.checkpoints.delete(checkpoint.id)
-        print("Request to delete checkpoint %s has been accepted." % (
-            checkpoint.id))
-    except Exception as e:
-        print("Delete for checkpoint %s failed: %s" % (checkpoint.id, e))
+    failure_count = 0
+    for item in args.checkpoint:
+        try:
+            checkpoint = shell_utils.find_checkpoint(cs, item)
+            cs.checkpoints.delete(checkpoint.id)
+            print("Request to delete checkpoint %s has been accepted." % item)
+        except Exception as e:
+            print("Delete for checkpoint %s failed: %s" % (item, e))
+    if failure_count == len(args.checkpoint):
+        raise exceptions.CommandError("Unable to delete any of the specified "
+                                      "checkpoints.")
 
 
 @utils.arg('checkpoint',
